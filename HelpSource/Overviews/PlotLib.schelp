@@ -1,0 +1,82 @@
+TITLE:: PlotLib
+summary:: Plots for the things SuperCollider does not draw by itself
+categories:: Libraries>PlotLib
+related:: Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum
+
+DESCRIPTION::
+A small set of link::Classes/UserView:: plots with one palette, one set of axes
+and one way of working: bifurcation diagrams, phase portraits, histograms, a live
+event scatter, a level meter and a spectrum analyser.
+
+For waveforms and running scopes the stock tools are already good, so PlotLib does
+not replace them:
+code::
+Signal.sineFill(512, [1, 0, 1/3]).plot;   // a wavetable
+{ SinOsc.ar(200) }.plot(0.02);            // a moment of a signal
+s.scope;                                  // running scope
+::
+
+SECTION:: The classes
+
+DEFINITIONLIST::
+## link::Classes/PlotLib:: || palette, fonts and the pure helpers: strong::map::,
+strong::histogram::, strong::extent::, strong::ticks::, strong::ampDb::.
+## link::Classes/PltView:: || the base class: window, grid, frame, ticks, caption.
+Subclass it for a new plot.
+## link::Classes/PltScatter:: || xs against ys, with an optional marker line.
+## link::Classes/PltHistogram:: || counts of a collection of values.
+## link::Classes/PltBifurcation:: || sweep a parameter of a one dimensional map
+and plot its attractor.
+## link::Classes/PltPhase:: || phase portrait of a two dimensional map.
+## link::Classes/PltEvents:: || live scatter of events over the last few seconds,
+with a histogram of what has been heard.
+## link::Classes/PltMeter:: || peak and RMS level per channel, from the server.
+## link::Classes/PltSpectrum:: || magnitude spectrum, linear or logarithmic in
+frequency.
+::
+
+SECTION:: How the classes are shaped
+
+Every plot separates computing from drawing. The maths is a class method returning
+plain data, so it can be checked without opening a window, and the instance only
+turns data into pixels:
+
+code::
+// data only, no GUI
+PltBifurcation.points({ |x, r| r * x * (1 - x) }, 3.2, 3.2, 0.5, 1, 2000, 64);
+
+// the same computation, drawn
+PltBifurcation({ |x, r| r * x * (1 - x) }, 2.4, 4.0).front;
+::
+
+The live views take their frames through a strong::pushFrame:: method, which the
+server responder calls but anything else can call too. That is how the meter and
+the spectrum are tested without a server, and how they can be driven from a
+different analysis.
+
+SECTION:: Examples
+
+code::
+// a distribution and the shape it has
+PltHistogram({ exprand(0.01, 1.0) } ! 8000, 0, 1, 40, "exprand").front;
+
+// period doubling into chaos, with a marker at one parameter value
+PltBifurcation({ |x, r| r * x * (1 - x) }, 2.4, 4.0, 0.5).marker_(3.82).front;
+
+// the Henon attractor
+PltPhase({ |x, y| [1 - (1.4 * x * x) + y, 0.3 * x] }, 0.1, 0.1, "Henon").front;
+
+// what a pattern is actually playing
+(
+p = PltEvents("Pwhite", 8, 150, 1200).front;
+q = p.watch(Pbind(\dur, Pwhite(0.08, 0.3), \freq, Pwhite(200, 900))).play;
+)
+q.stop; p.close;
+
+// listening to the output bus
+m = PltMeter(2, 0).front;
+x = PltSpectrum(0).front;
+::
+
+More in the strong::examples:: folder of the quark, and the tests in
+strong::tests:: are runnable with code::sclang tests/test-compute.scd::.

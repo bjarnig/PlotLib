@@ -1,0 +1,65 @@
+TITLE:: PltScatter
+summary:: Scatter of xs against ys
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltView, Classes/PltBifurcation, Classes/PltPhase
+
+DESCRIPTION::
+A great many small points in a box, with axes taken from the data. The base for
+link::Classes/PltBifurcation:: and link::Classes/PltPhase::.
+
+All the points go into one code::Pen.fill::: filling per point is far slower.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: xs
+argument:: ys
+Collections of the same length. Extra values in the longer one are ignored.
+argument:: title
+argument:: width
+argument:: height
+
+INSTANCEMETHODS::
+
+METHOD:: data_
+Replace the data and refresh. The visible range is recomputed from it.
+
+METHOD:: limits_
+Fix the visible range instead of taking it from the data.
+argument:: xLo
+argument:: xHi
+argument:: yLo
+argument:: yHi
+
+METHOD:: marker_
+Draw a vertical line at this x value, for "the parameter is here". Refreshes, so it
+can be dragged from a slider.
+
+METHOD:: equalAspect
+When true, both axes get the same units per pixel, by widening the tighter range
+around its centre. Off by default: attractor figures are conventionally scaled to
+fill the frame, and the tick labels make the scaling visible either way. Turn it on
+when the true proportions of a shape matter.
+
+METHOD:: dotColor
+METHOD:: dotSize
+METHOD:: alpha
+Alpha below 1 is what makes density legible: where the orbit spends its time comes
+out brighter.
+
+METHOD:: markerColor
+METHOD:: xs
+METHOD:: ys
+
+EXAMPLES::
+code::
+(
+var xs = (0 .. 1200).collect { |i| sin(i * 0.031) };
+var ys = (0 .. 1200).collect { |i| sin(i * 0.043 + 0.4) };
+p = PltScatter(xs, ys, "Lissajous").dotSize_(2).alpha_(0.6).front;
+)
+
+p.limits_(-1, 1, -1, 1);
+p.equalAspect_(true).refresh;
+p.close;
+::

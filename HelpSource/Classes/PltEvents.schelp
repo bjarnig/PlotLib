@@ -1,0 +1,96 @@
+TITLE:: PltEvents
+summary:: Live scatter of events, with a histogram of what has been heard
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltView, Classes/Pbind
+
+DESCRIPTION::
+A scrolling window of the last few seconds: one dot per event, log frequency up the
+axis, amplitude as radius, over a histogram of the frequencies currently visible.
+
+It shows what a pattern is doing rather than what it was written to do, which is
+where the two usually part company.
+
+The view animates at 30 fps and drops events as they scroll out of the window.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: title
+argument:: span
+Seconds visible.
+argument:: freqLo
+argument:: freqHi
+Range of the frequency axis. The upper panel is logarithmic and labelled in octaves.
+argument:: bins
+Bins in the histogram.
+argument:: width
+argument:: height
+
+INSTANCEMETHODS::
+
+METHOD:: watch
+Wrap a pattern so that playing it also plots it, and return the wrapped pattern.
+
+A pattern that sets code::\degree:: or code::\midinote:: has no code::\freq:: of its
+own; it is computed through the default parent event, so those spellings plot
+correctly too.
+argument:: pattern
+argument:: freqKey
+argument:: ampKey
+
+METHOD:: push
+One event. Feed it from a Routine, a responder, or anything else.
+argument:: freq
+argument:: amp
+argument:: time
+Defaults to now. Pass it to place an event yourself, which is how an already
+recorded sequence gets plotted.
+
+METHOD:: reset
+Empty the list.
+
+METHOD:: events
+The list itself, as code::[time, freq, amp]:: triples.
+
+METHOD:: span
+METHOD:: freqLo
+METHOD:: freqHi
+METHOD:: bins
+METHOD:: maxEvents
+Hard cap on the list, in case nothing is scrolling out.
+METHOD:: split
+Where the panels divide, as a fraction of the height.
+METHOD:: dotColor
+METHOD:: barColor
+
+EXAMPLES::
+code::
+(
+p = PltEvents("Pwhite", 8, 150, 1200).front;
+q = p.watch(
+	Pbind(\dur, Pwhite(0.08, 0.3), \freq, Pwhite(200, 900), \amp, Pwhite(0.1, 0.4))
+).play;
+)
+q.stop; p.close;
+
+// the same seen through a scale, which the frequency axis makes obvious
+(
+p = PltEvents("degrees", 8, 100, 1600).front;
+q = p.watch(Pbind(\dur, 0.12, \degree, Pwhite(-7, 14), \amp, 0.2)).play;
+)
+q.stop; p.close;
+
+// an exponential distribution of frequencies, seen in the histogram below
+(
+p = PltEvents("Pexprand", 10, 100, 4000, 50).front;
+q = p.watch(Pbind(\dur, 0.06, \freq, Pexprand(120, 3500), \amp, 0.15)).play;
+)
+q.stop; p.close;
+
+// plotting something already recorded
+(
+p = PltEvents("placed", 8, 150, 1600).front;
+~now = Main.elapsedTime;
+200.do { |i| p.push(exprand(180.0, 1500.0), rrand(0.05, 0.5), ~now - 8 + (i * 0.04)) };
+)
+::

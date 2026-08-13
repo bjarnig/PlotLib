@@ -1,0 +1,86 @@
+TITLE:: PltMeter
+summary:: Peak and RMS level meter, one bar per channel
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltSpectrum, Classes/SendPeakRMS
+
+DESCRIPTION::
+A vertical bar per channel: RMS filled, peak as a line, the peak held for a moment
+above it, and a red mark at the top when a channel has hit full scale.
+
+Analysis runs on the server with link::Classes/SendPeakRMS:: at the tail of the root
+node, so code::In.ar:: sees what everything else has written, and arrives as OSC.
+
+code::pushFrame:: does the same job from the language, so the view can be driven
+from any other source, and can be tested without a server.
+
+note::
+code::SendPeakRMS:: applies its own decay to the peak, and its default is 3 seconds,
+which makes the peak line fall slowly and duplicates the hold line. PltMeter sets
+strong::peakLag:: to 0.1 instead and lets strong::holdTime:: do the holding.
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: numChannels
+argument:: bus
+Bus index to read from. 0 is the first output channel.
+argument:: server
+Defaults to code::Server.default::. Analysis starts at once if it is running,
+otherwise call strong::start:: later.
+argument:: title
+argument:: width
+argument:: height
+
+INSTANCEMETHODS::
+
+METHOD:: start
+Create the analysis synth and the responder. A no-op if already running.
+
+METHOD:: stop
+Free them. strong::close:: does this too.
+
+METHOD:: pushFrame
+One frame of levels, as linear amplitudes.
+argument:: argPeaks
+argument:: argRms
+
+METHOD:: clipping
+True while any channel has hit full scale within the hold time.
+
+METHOD:: peaks
+METHOD:: rmss
+METHOD:: holds
+Current values, as linear amplitudes.
+
+METHOD:: floorDb
+Bottom of the scale.
+METHOD:: holdTime
+Seconds a peak is held.
+METHOD:: replyRate
+Frames per second from the server.
+METHOD:: peakLag
+See the note above.
+METHOD:: rmsColor
+METHOD:: peakColor
+METHOD:: clipColor
+METHOD:: numChannels
+METHOD:: bus
+METHOD:: server
+
+EXAMPLES::
+code::
+s.boot;
+m = PltMeter(2, 0).front;             // the first two output channels
+x = { PinkNoise.ar(0.3) ! 2 }.play;
+x.free;
+m.close;
+
+// a wider meter, more headroom shown
+m = PltMeter(8, 0, s, "eight channels", 560, 340).floorDb_(-72).front;
+
+// driven from the language
+m = PltMeter(4, 0, nil, "from anywhere").front;
+m.pushFrame([1.0, 0.5, 0.12, 0.01], [0.7, 0.35, 0.08, 0.004]);
+m.clipping;                           // true
+::

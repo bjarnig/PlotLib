@@ -1,0 +1,64 @@
+TITLE:: PltHistogram
+summary:: Histogram of a collection of values
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltView, Classes/PlotLib
+
+DESCRIPTION::
+Counts of a collection over equal bins. Useful for looking at what a distribution
+actually produces, which is often not what its name suggests.
+
+The counting is link::Classes/PlotLib#*histogram::, so a distribution can be
+checked without opening a window.
+
+A non-empty bin is drawn at least one pixel tall, so rare values stay visible.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: values
+argument:: lo
+argument:: hi
+Range to bin across. Values outside it are counted into the end bins.
+argument:: bins
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: fromCounts
+Plot counts that were binned elsewhere.
+argument:: counts
+argument:: lo
+argument:: hi
+argument:: title
+argument:: width
+argument:: height
+
+INSTANCEMETHODS::
+
+METHOD:: data_
+Rebin a new collection over the same range and refresh.
+
+METHOD:: normalized
+The proportion of the total in each bin, which is the shape a density is judged by.
+
+METHOD:: counts
+METHOD:: lo
+METHOD:: hi
+METHOD:: bins
+METHOD:: barColor
+METHOD:: alpha
+METHOD:: label
+Appended to the caption.
+
+EXAMPLES::
+code::
+PltHistogram({ 1.0.rand } ! 8000, 0, 1, 40, "Pwhite").front;
+PltHistogram({ exprand(0.01, 1.0) } ! 8000, 0, 1, 40, "Pexprand").front;
+
+// the mean of three uniforms has a standard deviation of a third of the sum's,
+// which a histogram shows at a glance
+PltHistogram({ ({ 1.0.rand } ! 3).sum / 3 } ! 8000, 0, 1, 40, "mean of three").front;
+
+// counts from somewhere else
+PltHistogram.fromCounts([3, 9, 14, 8, 2], 0, 5, "given counts").front;
+::

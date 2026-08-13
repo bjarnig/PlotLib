@@ -1,0 +1,12 @@
+(
+	\name: "PlotLib",
+	\path: "PlotLib",
+	\summary: "UserView/Pen plots for SuperCollider: scatter, histogram, bifurcation diagram, phase portrait, live event scatter, level meter, spectrum analyser",
+	\author: "Bjarni Gunnarsson",
+	\url: "https://github.com/bjarnig/PlotLib",
+	\version: "0.1.0",
+	\since: "2026",
+	\status: "alpha",
+	\license: "GPL-3.0",
+	\schelp: "Overviews/PlotLib"
+)

@@ -1,0 +1,102 @@
+TITLE:: PltSpectrum
+summary:: Magnitude spectrum, linear or logarithmic in frequency
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltMeter, Classes/FFT, Classes/FreqScope
+
+DESCRIPTION::
+Magnitude against frequency, linear by default so partials stay countable, and
+logarithmic when the whole range matters.
+
+An link::Classes/FFT:: writes frames into a buffer on the server and the language
+polls that buffer. A poll can land in the middle of a frame, which shows as a moment
+of noise and is not worth locking against for a picture.
+
+Each pixel column takes the loudest bin that falls in it, so a narrow peak survives
+however many bins share a column.
+
+note::
+FFT output is not normalised: a full scale sine under a Hann window peaks at about
+code::fftSize/4::. strong::pushFrame:: scales by the reciprocal, which puts 0 dBFS
+at 0 dB on the plot. Verified against tones on exact bin centres in
+code::tests/test-live.scd::.
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: bus
+Bus index to analyse, one channel.
+argument:: fftSize
+Frame size. Larger resolves frequency more finely and time more coarsely.
+argument:: server
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: magnitudes
+Magnitudes from the raw contents of an FFT buffer. scsynth packs a frame as
+code::[DC, nyquist, re1, im1, re2, im2, ...]::, so the two purely real bins come
+first and are not a complex pair.
+returns:: code::fftSize/2 + 1:: magnitudes, bin 0 to nyquist.
+
+METHOD:: binFreq
+Centre frequency of a bin.
+argument:: bin
+argument:: fftSize
+argument:: sampleRate
+
+INSTANCEMETHODS::
+
+METHOD:: start
+Allocate the buffer, start the analysis synth and the poller.
+
+METHOD:: stop
+Free them. strong::close:: does this too.
+
+METHOD:: pushFrame
+One frame of magnitudes: scaled, smoothed in time, and folded into the peak hold.
+
+METHOD:: mags
+The current magnitudes, bin 0 to nyquist.
+
+METHOD:: logFreq
+Logarithmic frequency axis. The labels and the grid move to the frequencies a
+listener thinks in.
+METHOD:: minHz
+Left edge in log mode.
+METHOD:: maxHz
+Right edge.
+METHOD:: floorDb
+METHOD:: ceilDb
+Top of the scale. Raise it to leave headroom above 0 dBFS.
+METHOD:: smooth
+Time smoothing, 0 for none.
+METHOD:: showHold
+METHOD:: holdDecayDb
+dB per second the hold trace falls.
+METHOD:: pollRate
+Frames per second read from the server.
+METHOD:: traceColor
+METHOD:: holdColor
+METHOD:: sampleRate
+METHOD:: fftSize
+METHOD:: bus
+METHOD:: server
+
+EXAMPLES::
+code::
+s.boot;
+x = PltSpectrum(0).front;
+y = { Blip.ar(120, 24, 0.3) ! 2 }.play;
+
+x.maxHz_(4000);                  // fill the panel at this pitch
+x.logFreq_(true);                // the whole range instead
+x.smooth_(0.85);                 // slower, steadier
+y.free; x.close;
+
+// a longer frame, for low frequency detail
+x = PltSpectrum(0, 4096).logFreq_(true).front;
+
+// which bin is which
+PltSpectrum.binFreq(100, 1024, 48000);    // 4687.5
+::

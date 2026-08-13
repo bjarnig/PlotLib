@@ -1,0 +1,167 @@
+TITLE:: PlotLib
+summary:: Palette, fonts and the pure helpers shared by every plot
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltView
+
+DESCRIPTION::
+Namespace for the parts of PlotLib that have no GUI in them, so all of it can be
+tested headless. See link::Overviews/PlotLib:: for the library as a whole.
+
+SECTION:: Themes
+
+Three themes are built in:
+
+DEFINITIONLIST::
+## code::\darkBlue:: || the default: the Accrete/Ora ground with a blue accent.
+## code::\dark:: || neutral graphite, where the data carries the colour and the
+frame does not.
+## code::\light:: || for print and for slides on a white ground.
+::
+
+code::
+PlotLib.theme_(\light);      // every open plot changes with it
+PlotLib.theme_(\darkBlue);
+::
+
+Views read the palette while drawing rather than at creation, and open windows are
+kept in code::PlotLib.views::, so switching theme redraws them all in place. A
+colour set explicitly on an instance (code::plot.dotColor_(Color.red)::) survives a
+theme change; a colour left alone follows the theme.
+
+note::
+A palette is not invertible, and two things have to change with the ground rather
+than being flipped: an alpha blend darkens on a dark ground and washes out on a
+light one, and a 1px anti-aliased line that reads on dark nearly disappears on
+white. strong::alphaFor:: and strong::lineWidth:: handle both, and every view puts
+its alphas and hairlines through them.
+::
+
+CLASSMETHODS::
+
+METHOD:: theme
+The name of the current theme.
+
+METHOD:: theme_
+Switch theme, rethemeing every open view. An unknown name warns and changes
+nothing.
+argument:: name
+code::\darkBlue::, code::\dark::, code::\light::, or one added with
+strong::addTheme::.
+
+METHOD:: addTheme
+Add or replace a theme. A palette needs code::ground:: (code::\dark:: or
+code::\light::) and the nine colour keys.
+code::
+(
+PlotLib.addTheme(\amber, (
+	ground: \dark,
+	bg:    Color.new255(20, 16, 12),
+	ink:   Color.new255(222, 160, 74),
+	mint:  Color.new255(150, 200, 150),
+	gold:  Color.new255(240, 210, 120),
+	rose:  Color.new255(210, 120, 120),
+	trace: Color.new255(240, 232, 220),
+	muted: Color.new255(160, 145, 125),
+	edge:  Color.new255(90, 78, 62),
+	grid:  Color(1, 1, 1, 0.06)
+));
+PlotLib.theme_(\amber);
+)
+::
+
+METHOD:: themes
+Every theme, as an Event of palettes.
+
+METHOD:: views
+Open views, so that a theme change can reach them. A view adds itself when it opens
+and removes itself when it closes.
+
+METHOD:: color
+The palette colour for a key, falling back to code::\ink:: for an unknown one.
+Keys: code::bg::, code::ink::, code::mint::, code::gold::, code::rose::,
+code::trace::, code::muted::, code::edge::, code::grid::.
+argument:: key
+A Symbol.
+
+METHOD:: setColor
+Replace one entry of the current theme. This edits the theme itself, so it holds
+across a switch away and back.
+code::
+PlotLib.setColor(\ink, Color(0.9, 0.6, 0.3));
+::
+
+METHOD:: isLight
+Whether the current theme sits on a light ground.
+
+METHOD:: alphaFor
+An alpha value adjusted for the ground. Transparency encodes density in the scatter
+plots, and the same number does not mean the same weight on white as on black.
+
+METHOD:: lineWidth
+A stroke width adjusted for the ground: a hairline needs about double the weight to
+read on white.
+
+METHOD:: palette
+The whole palette of the current theme, as an Event.
+
+METHOD:: font
+A Font in the resolved interface family.
+argument:: size
+argument:: bold
+
+METHOD:: fontName
+The family actually in use, resolved on first call from a preference list.
+code::Font.availableFonts:: lists families rather than faces, so a name that does
+not exist falls back silently; resolving from a list avoids naming one.
+
+METHOD:: map
+Rescale code::value:: from one range to another, clipped to the target. A
+degenerate input range gives code::outLo:: instead of dividing by zero.
+argument:: value
+argument:: inLo
+argument:: inHi
+argument:: outLo
+argument:: outHi
+
+METHOD:: histogram
+Count values into equal bins across code::[lo, hi]::. Values at code::hi:: land in
+the last bin; non-numbers and NaN are skipped.
+returns:: An Array of counts, code::bins:: long.
+
+METHOD:: extent
+strong::min:: and strong::max:: of a collection in one pass, ignoring NaN. Returns
+code::nil:: for an empty or all-NaN input, and widens a constant input so no
+mapping ever divides by zero.
+returns:: code::[lo, hi]:: or nil.
+
+METHOD:: ticks
+Tick values inside code::[lo, hi]::, spaced 1, 2, 2.5 or 5 times a power of ten.
+argument:: lo
+argument:: hi
+argument:: maxCount
+About how many ticks are wanted; the step is chosen to come near it.
+
+METHOD:: fmt
+A compact fixed-point string for an axis label, with the precision taken from the
+span it belongs to. Whole quanta print as integers, so a frequency axis reads
+code::5000:: and not code::5000.0::.
+
+METHOD:: ampDb
+Amplitude to dB with a floor, so silence maps to the bottom of a meter rather than
+to negative infinity.
+
+METHOD:: classes
+Every class in the quark.
+
+METHOD:: version
+
+EXAMPLES::
+code::
+PlotLib.ticks(2.4, 4.0, 6);          // [2.5, 3.0, 3.5, 4.0]
+PlotLib.ticks(0, 22050, 6);          // 0, 5000, 10000, 15000, 20000
+PlotLib.map(5, 0, 10, 100, 200);     // 150
+PlotLib.map(99, 0, 10, 100, 200);    // 200, clipped
+PlotLib.extent([3, -1, 7]);          // [-1, 7]
+PlotLib.histogram([0.05, 0.15, 0.15], 0, 1, 10);
+PlotLib.ampDb(0.5).round(0.01);      // -6.02
+::

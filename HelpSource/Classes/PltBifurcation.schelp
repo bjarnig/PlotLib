@@ -1,0 +1,80 @@
+TITLE:: PltBifurcation
+summary:: Bifurcation diagram of a one dimensional map
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltScatter, Classes/PltPhase
+
+DESCRIPTION::
+Sweep a parameter along x and plot the attractor vertically: one fixed point
+becomes two, then four, then chaos.
+
+Each column runs the orbit from code::x0::, throws away code::transient::
+iterations so only the attractor is left, then records code::keep:: of them.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: mapFunc
+Takes the current value and the swept parameter, returns the next value:
+code::{ |x, r| r * x * (1 - x) }::
+argument:: paramLo
+argument:: paramHi
+argument:: x0
+argument:: columns
+How many parameter values across the sweep.
+argument:: transient
+Iterations discarded per column.
+argument:: keep
+Iterations plotted per column.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: points
+The computation on its own, with no window. Values that are NaN or larger than 1e6
+are dropped, so a divergent map contributes nothing rather than infinities.
+returns:: code::[params, values]::, two FloatArrays with one entry per plotted
+point. FloatArray is single precision, so do not compare the parameters at 1e-9.
+
+INSTANCEMETHODS::
+
+METHOD:: zoom
+Recompute over a narrower parameter window, keeping the same map. The interesting
+structure is self-similar, so this is the main way to use the class.
+argument:: newLo
+argument:: newHi
+argument:: columns
+argument:: transient
+argument:: keep
+
+METHOD:: mapFunc
+METHOD:: paramLo
+METHOD:: paramHi
+METHOD:: x0
+
+EXAMPLES::
+code::
+// the logistic map, with a marker at one parameter value
+p = PltBifurcation({ |x, r| r * x * (1 - x) }, 2.4, 4.0, 0.5).marker_(3.82).front;
+
+// into the first period-doubling window
+p.zoom(3.53, 3.6);
+p.zoom(2.4, 4.0);
+
+// the tent map
+(
+PltBifurcation({ |x, r| if(x <= 0.5, { 2 * r * x }, { 2 * r * (1 - x) }) },
+	0.4, 1.0, 0.25, 460, 200, 90, "tent map").marker_(0.92).front;
+)
+
+// the sine map
+(
+PltBifurcation({ |x, r| r * sin(pi * x) }, 0.5, 1.0, 0.5, 460, 300, 100,
+	"sine map").front;
+)
+
+// data only: the period at a given parameter value
+(
+PltBifurcation.points({ |x, r| r * x * (1 - x) }, 3.5, 3.5, 0.5, 1, 2000, 64)
+	[1].collect(_.round(1e-5)).asSet.size;   // 4
+)
+::

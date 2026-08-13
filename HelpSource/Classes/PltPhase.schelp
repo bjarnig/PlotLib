@@ -1,0 +1,71 @@
+TITLE:: PltPhase
+summary:: Phase portrait of a two dimensional map
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltScatter, Classes/PltBifurcation
+
+DESCRIPTION::
+x against y, so an attractor shows as a shape rather than as a time series.
+
+The orbit is followed for code::keep:: iterations after a code::transient::, and
+stops early if it escapes, rather than plotting nonsense.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: mapFunc
+Takes x and y, returns the next pair:
+code::{ |x, y| [1 - (1.4 * x * x) + y, 0.3 * x] }::
+argument:: x0
+argument:: y0
+Seeds matter: a seed off the chaotic orbit can give one point or an escape.
+argument:: title
+argument:: transient
+argument:: keep
+argument:: width
+argument:: height
+
+METHOD:: points
+The computation on its own, with no window.
+argument:: mapFunc
+argument:: x0
+argument:: y0
+argument:: transient
+argument:: keep
+argument:: limit
+Absolute value past which the orbit counts as escaped.
+returns:: code::[xs, ys]::, two FloatArrays, shorter than code::keep:: if the orbit
+escaped.
+
+INSTANCEMETHODS::
+
+METHOD:: seed
+Rerun from a different seed, keeping the same map.
+
+METHOD:: mapFunc
+METHOD:: x0
+METHOD:: y0
+
+EXAMPLES::
+code::
+// Henon
+PltPhase({ |x, y| [1 - (1.4 * x * x) + y, 0.3 * x] }, 0.1, 0.1, "Henon").front;
+
+// gingerbreadman, from a seed that is on the chaotic orbit
+PltPhase({ |x, y| [1 - y + x.abs, x] }, -0.1, 0, "gingerbreadman").front;
+
+// Ikeda
+(
+PltPhase({ |x, y|
+	var t = 0.4 - (6 / (1 + (x * x) + (y * y)));
+	[1 + (0.9 * ((x * cos(t)) - (y * sin(t)))), 0.9 * ((x * sin(t)) + (y * cos(t)))]
+}, 0.1, 0.1, "Ikeda").front;
+)
+
+// standard map, which is closer to isotropic, so equal aspect is worth having
+(
+PltPhase({ |x, y|
+	var ny = y + (0.971635 * sin(x));
+	[(x + ny) % 2pi, ny]
+}, 0.1, 1.0, "standard map").equalAspect_(true).front;
+)
+::

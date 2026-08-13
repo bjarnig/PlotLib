@@ -1,0 +1,121 @@
+TITLE:: PltView
+summary:: Base class for the plots: window, grid, frame, ticks, caption
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PlotLib, Classes/PltScatter
+
+DESCRIPTION::
+Everything shared by the plots. Subclass it to add one.
+
+A subclass provides three things:
+
+DEFINITIONLIST::
+## strong::dataBounds:: || code::[xLo, xHi, yLo, yHi]:: in data units, or nil for
+no grid and no ticks.
+## strong::drawData:: || the code::Pen:: calls, placing data with
+strong::xPix:: and strong::yPix::.
+## strong::caption:: || one line under the plot, or nil.
+::
+
+Drawing order is grid, data, frame, ticks, labels, so the frame and the text stay
+on top of the data.
+
+code::
+PltRamp : PltView {
+	var <values;
+
+	*new { |values, title = "ramp"| ^super.new(title, 600, 300).init(values) }
+	init { |argValues| values = argValues; this.refresh }
+
+	dataBounds { ^[0, values.size - 1, values.minItem, values.maxItem] }
+	caption { ^values.size.asString + "values" }
+
+	drawData { |v, r, b|
+		Pen.strokeColor = PlotLib.color(\trace);
+		values.do { |y, i|
+			var p = Point(this.xPix(i, r, b), this.yPix(y, r, b));
+			if(i == 0) { Pen.moveTo(p) } { Pen.lineTo(p) };
+		};
+		Pen.stroke;
+	}
+}
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: title
+Window title. Defaults to the class name.
+argument:: width
+argument:: height
+
+INSTANCEMETHODS::
+
+METHOD:: front
+METHOD:: close
+Closes the window, which calls strong::free::.
+
+METHOD:: refresh
+Redraw, deferred to the AppClock, and a no-op once the window is closed. Safe to
+call from a responder or another thread.
+
+METHOD:: free
+Release responders, synths and dependants. Called by the window's code::onClose::;
+subclasses that hold server resources override it.
+
+METHOD:: writeImage
+Write a PNG of the window as it stands, with code::Image.fromWindow::. Call it from
+a Routine on the AppClock and wait first: code::drawFunc:: has not run at the moment
+code::front:: returns.
+code::
+Routine({ var p = PltScatter(x, y).front; 0.4.wait; p.writeImage("~/plot.png"); }).play(AppClock);
+::
+
+METHOD:: window
+METHOD:: view
+The Window and the UserView, for anything the class does not cover.
+
+METHOD:: padLeft
+METHOD:: padRight
+METHOD:: padTop
+METHOD:: padBottom
+Space around the data area, in pixels. The left pad has to hold the widest y label.
+
+METHOD:: xLabel
+METHOD:: yLabel
+METHOD:: showTicks
+METHOD:: xTicks
+METHOD:: yTicks
+About how many ticks each axis should get.
+
+METHOD:: plotRect
+The data area for a given view, inside the padding.
+
+METHOD:: xPix
+METHOD:: yPix
+Data units to pixels. y is inverted, so a larger value is higher up.
+argument:: x
+argument:: r
+The plot rect.
+argument:: b
+The bounds array.
+
+METHOD:: dataBounds
+METHOD:: drawData
+METHOD:: caption
+To override. See the description.
+
+METHOD:: adjustBounds
+A last chance to change the visible range once the pixel size is known.
+link::Classes/PltScatter:: uses it for equal aspect.
+
+METHOD:: xTickValues
+METHOD:: yTickValues
+METHOD:: xTickLabel
+METHOD:: yTickLabel
+Where the ticks go and what they say, in data units. Override these for a
+transformed axis and the grid, the labels and the spacing stay in agreement;
+link::Classes/PltSpectrum:: does it for logarithmic frequency.
+
+METHOD:: drawPanel
+Draw one framed, gridded, ticked box. A stacked view calls it once per panel, with
+code::xLabels:: false on all but the lowest.
