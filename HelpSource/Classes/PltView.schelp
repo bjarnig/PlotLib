@@ -70,9 +70,29 @@ code::
 Routine({ var p = PltScatter(x, y).front; 0.4.wait; p.writeImage("~/plot.png"); }).play(AppClock);
 ::
 
+METHOD:: alwaysOnTop
+METHOD:: alwaysOnTop_
+Keep the window above others, for watching a plot while working elsewhere.
+code::
+m = PltMeter(2, 0).alwaysOnTop_(true).front;
+::
+
+METHOD:: position
+METHOD:: position_
+Top left corner of the window, the same way link::Classes/ServerMeter:: does it, so
+a set of plots can be placed rather than stacked.
+code::
+(
+PltMeter(2, 0).position_(20 @ 60).front;
+PltSpectrum(0).position_(340 @ 60).front;
+)
+::
+
 METHOD:: window
 METHOD:: view
 The Window and the UserView, for anything the class does not cover.
+
+Escape closes the window.
 
 METHOD:: padLeft
 METHOD:: padRight

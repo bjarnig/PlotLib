@@ -14,7 +14,7 @@ PltMeter : PltView {
 
 	var <numChannels, <bus, <server, <replyId;
 	var <peaks, <rmss, <holds, <holdStamps;
-	var synth, responder;
+	var synth, responder, restartFunc;
 	// peakLag is SendPeakRMS's own decay. It defaults to 3 seconds there, which
 	// makes the peak line fall slowly and duplicate the hold line; keep it short
 	// and let holdTime do the holding.
@@ -40,6 +40,11 @@ PltMeter : PltView {
 		// the bottom pad holds the channel numbers and the caption line under them
 		padLeft = 46; padBottom = 42; padRight = 14;
 		yLabel = "dB";
+		// cmd-period frees the analysis synth and ServerTree fires straight after.
+		// Without re-registering there, the view keeps showing the last levels it
+		// received, for ever, which is worse than showing nothing.
+		restartFunc = { this.prRestart };
+		ServerTree.add(restartFunc, server);
 		if(server.serverRunning) { this.start };
 	}
 
@@ -71,7 +76,20 @@ PltMeter : PltView {
 		^this
 	}
 
-	free { this.stop; ^this }
+	// The nodes are already gone at this point, so drop the stale references
+	// rather than sending /n_free to nothing.
+	prRestart {
+		synth = nil;
+		responder.free; responder = nil;
+		this.start;
+		^this
+	}
+
+	free {
+		ServerTree.remove(restartFunc, server);
+		this.stop;
+		^this
+	}
 
 	// One frame of levels, as linear amplitudes.
 	pushFrame { |argPeaks, argRms|

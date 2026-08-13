@@ -19,6 +19,35 @@ which makes the peak line fall slowly and duplicates the hold line. PltMeter set
 strong::peakLag:: to 0.1 instead and lets strong::holdTime:: do the holding.
 ::
 
+The analysis is rebuilt through link::Classes/ServerTree::, so it comes back after
+cmd-period and after a reboot. Without that a meter goes on displaying the last
+level it received, and a frozen meter looks exactly like a working one.
+
+SECTION:: Compared with s.meter
+
+link::Classes/ServerMeter:: covers a different job: it is the fixed monitor for a
+whole server, inputs and outputs together. PltMeter is a meter you point at a bus
+and configure.
+
+table::
+## strong::  || strong::s.meter:: || strong::PltMeter::
+## busses || inputs and outputs in one window || one bus range per instance, any bus
+## scale || fixed, -80 to 0, two labels || strong::floorDb::, with real dB ticks
+## update rate || 10 Hz, a class variable || strong::replyRate::, 20 by default
+## peak decay || peakLag 3 s, fixed || strong::peakLag:: 0.1, plus a held line for strong::holdTime::
+## clipping || colour change in the LevelIndicator || red line and a mark above the frame, and strong::clipping:: as a Boolean
+## values in the language || none, they live in the widgets || strong::peaks::, strong::rmss::, strong::holds::
+## driving it yourself || no || strong::pushFrame::
+## after cmd-period || recovers || recovers
+## window || fixed size, escape closes || resizable, escape closes, strong::alwaysOnTop::, strong::position::
+## embedding in your own view || yes, ServerMeterView || no, it owns its window
+## server synths || one pair per server, shared by every view || one synth per meter
+::
+
+So for watching a whole server, code::s.meter:: is still the right thing. Use this
+one when the meter needs a scale, a bus of its own, its numbers available to code,
+or a theme that matches the other plots.
+
 CLASSMETHODS::
 
 METHOD:: new

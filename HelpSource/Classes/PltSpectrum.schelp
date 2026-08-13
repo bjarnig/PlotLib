@@ -14,6 +14,14 @@ of noise and is not worth locking against for a picture.
 Each pixel column takes the loudest bin that falls in it, so a narrow peak survives
 however many bins share a column.
 
+The analysis is rebuilt through link::Classes/ServerTree::, so it comes back after
+cmd-period and after a reboot; cmd-period would otherwise take the synth and the
+poller's clock with it and leave the last frame frozen on screen.
+
+Compared with link::Classes/FreqScope::: that one draws on the server and is the
+cheaper choice for a constantly open analyser. This one keeps the magnitudes in the
+language, where strong::mags:: can be read, tested, and drawn on any scale.
+
 note::
 FFT output is not normalised: a full scale sine under a Hann window peaks at about
 code::fftSize/4::. strong::pushFrame:: scales by the reciprocal, which puts 0 dBFS

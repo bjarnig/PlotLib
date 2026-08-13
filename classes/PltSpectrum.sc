@@ -14,7 +14,7 @@ and is not worth locking against for a picture.
 PltSpectrum : PltView {
 	var <bus, <fftSize, <server;
 	var <mags;                     // magnitudes, bin 0 to fftSize/2
-	var buffer, synth, poller;
+	var buffer, synth, poller, restartFunc;
 	var holds;
 	var <>maxHz = 12000, <>minHz = 20, <>floorDb = -84, <>ceilDb = 0, <>logFreq = false;
 	var <>smooth = 0.5, <>showHold = true, <>holdDecayDb = 12;
@@ -34,6 +34,10 @@ PltSpectrum : PltView {
 		mags = 0 ! ((fftSize / 2).asInteger + 1);
 		holds = mags.copy;
 		xLabel = "Hz"; yLabel = "dB";
+		// cmd-period frees the synth and clears the clocks, so the poller dies too;
+		// ServerTree fires afterwards and is where this gets rebuilt
+		restartFunc = { this.prRestart };
+		ServerTree.add(restartFunc, server);
 		if(server.serverRunning) { this.start };
 	}
 
@@ -80,7 +84,21 @@ PltSpectrum : PltView {
 		^this
 	}
 
-	free { this.stop; ^this }
+	// The synth is gone and the poller's clock has been cleared, but the buffer is
+	// still allocated: free it here or every cmd-period leaks one.
+	prRestart {
+		poller.stop; poller = nil;
+		synth = nil;
+		buffer.free; buffer = nil;
+		this.start;
+		^this
+	}
+
+	free {
+		ServerTree.remove(restartFunc, server);
+		this.stop;
+		^this
+	}
 
 	/*
 	Magnitudes from the contents of an FFT buffer.

@@ -76,6 +76,37 @@ Routine({
 	};
 
 	ok.value("bin count is fftSize/2 + 1", spectrum.mags.size == 513);
+
+	/*
+	cmd-period frees every node and clears the clocks, which takes the analysis
+	synth and the poller with it. Both views register a restart with ServerTree,
+	which fires just after. Without it they keep displaying the last frame they
+	received for ever, and a frozen meter looks exactly like a working one.
+
+	The check needs a source that differs from the first in both level and
+	frequency, or a stale reading passes.
+	*/
+	"--- recovery after cmd-period ---".postln;
+	meter = PltMeter(2, 0, s, "recovery");
+	0.5.wait;
+	source = { SinOsc.ar(8 * sr / 1024, 0, 0.5) ! 2 }.play;
+	1.2.wait;
+	ok.value("both views are reading the first source",
+		near.value(meter.peaks[0], 0.5, 0.02) and: { spectrum.mags.maxIndex == 8 });
+
+	CmdPeriod.run;
+	1.0.wait;
+	source = { SinOsc.ar(100 * sr / 1024, 0, 0.25) ! 2 }.play;
+	2.0.wait;
+	ok.value("the meter recovers, reading " ++ meter.peaks[0].round(0.001)
+		++ " where a frozen one would still read 0.5",
+		near.value(meter.peaks[0], 0.25, 0.02));
+	ok.value("the spectrum recovers, peaking at bin " ++ spectrum.mags.maxIndex
+		++ " where a frozen one would still read 8",
+		spectrum.mags.maxIndex == 100);
+	source.free;
+	meter.close;
+	0.3.wait;
 	ok.value("silence decays toward the floor", {
 		1.5.wait;
 		PlotLib.ampDb(spectrum.mags.maxItem) < -40

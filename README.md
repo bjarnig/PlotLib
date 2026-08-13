@@ -52,6 +52,12 @@ already good, so this does not replace them.
 
 ![spectrum analyser on a logarithmic frequency axis](images/spectrum-live-log.png)
 
+`PltMeter` is not a replacement for `s.meter`, which is the fixed monitor for a
+whole server. This one points at a bus, has a settable dB scale and update rate,
+holds peaks separately from the peak line, exposes `peaks` / `rmss` / `clipping` to
+code, and can be driven from the language with `pushFrame`. Both recover after
+cmd-period. See the help file for the full comparison.
+
 ## Themes
 
 `\darkBlue` (default), `\dark`, `\light`. Open plots change with the theme.
@@ -70,7 +76,10 @@ PlotLib.theme_(\light);
 Computing is separate from drawing: the maths is a class method returning plain
 data, so `PltBifurcation.points(...)` needs no window and can be tested headless.
 The live views take frames through `pushFrame`, so they can be driven from anything,
-not only from the server.
+not only from the server, and they re-register through `ServerTree` so cmd-period
+does not leave a frozen display behind.
+
+Every plot has `alwaysOnTop_`, `position_`, `writeImage`, and closes on escape.
 
 ```
 sclang tests/test-compute.scd     # maps, distributions, ticks, FFT unpacking

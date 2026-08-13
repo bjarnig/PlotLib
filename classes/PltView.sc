@@ -24,7 +24,14 @@ PltView {
 		view = UserView(window, Rect(0, 0, width, height))
 			.resize_(5)
 			.background_(PlotLib.color(\bg))
-			.drawFunc_({ |v| this.prDraw(v) });
+			.drawFunc_({ |v| this.prDraw(v) })
+			// escape closes, as it does in ServerMeter; the modifier test keeps
+			// cmd-escape and the like out of it
+			.keyDownAction_({ |v, char, modifiers|
+				if((char == 27.asAscii) and: { (modifiers & 16515072) == 0 }) {
+					window.close
+				};
+			});
 		// registered so a theme change reaches every open window; removing it on
 		// close is not optional, or the view is retained and keeps redrawing
 		PlotLib.views.add(this);
@@ -46,6 +53,18 @@ PltView {
 
 	front { window.front; ^this }
 	close { window.close; ^this }
+
+	// Keep the plot above other windows, for watching it while working elsewhere.
+	alwaysOnTop { ^window.alwaysOnTop }
+	alwaysOnTop_ { |bool| window.alwaysOnTop_(bool); ^this }
+
+	// Top left corner, as ServerMeter does it, so a set of plots can be placed.
+	position { ^Point(window.bounds.left, window.bounds.top) }
+	position_ { |point|
+		point = point.asPoint;
+		window.bounds_(window.bounds.left_(point.x).top_(point.y));
+		^this
+	}
 	refresh { { if(window.isClosed.not) { view.refresh } }.defer; ^this }
 	// release responders, synths, dependants; the window's onClose calls it
 	free { ^this }
