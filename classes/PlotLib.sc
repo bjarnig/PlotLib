@@ -200,6 +200,7 @@ PlotLib {
 	*classes {
 		^[PltView, PltScatter, PltHistogram, PltBifurcation, PltPhase,
 			PltEvents, PltMeter, PltSpectrum,
-			PltWave, PltEnvelope, PltSpectrogram, PltVector]
+			PltWave, PltEnvelope, PltSpectrogram, PltVector,
+			PltTrack, PltMap]
 	}
 }

@@ -120,6 +120,65 @@ Routine({
 	spectrum.close;
 	0.5.wait;
 
+	/*
+	PltTrack's built in analysis. Asserted as what the descriptors mean, not as
+	"numbers arrived": noise is spectrally flat and a sine is not, and a sine's
+	centroid sits at its own frequency.
+	*/
+	"--- PltTrack.analysis, against signals whose descriptors are known ---".postln;
+	{
+		var track = PltTrack.analysis(0, s, 10, "analysis test");
+		var valueOf = { |name|
+			var t = track.tracks.detect { |each| each[\name] == name };
+			var last = t[\points].last;
+			if(last.isNil) { nil } { last[1] }
+		};
+		var sineFlat, noiseFlat, sineCentroid;
+		0.5.wait;
+
+		source = { SinOsc.ar(500, 0, 0.5) ! 2 }.play;
+		2.0.wait;
+		sineFlat = valueOf.value("flatness");
+		sineCentroid = valueOf.value("centroid");
+		ok.value("a sine's loudness is reported at all: " ++ valueOf.value("loudness"),
+			valueOf.value("loudness").notNil and: { valueOf.value("loudness") > 0 });
+		ok.value("a 500 Hz sine has its centroid near 500: " ++ sineCentroid.round(1),
+			near.value(sineCentroid, 500, 250));
+		source.free;
+		0.5.wait;
+
+		source = { WhiteNoise.ar(0.3) ! 2 }.play;
+		2.0.wait;
+		noiseFlat = valueOf.value("flatness");
+		ok.value("noise is flatter than a sine: " ++ noiseFlat.round(0.001)
+			++ " against " ++ sineFlat.round(0.001), noiseFlat > (sineFlat * 3));
+		ok.value("noise has a much higher centroid than the sine: "
+			++ valueOf.value("centroid").round(1),
+			valueOf.value("centroid") > (sineCentroid * 3));
+		source.free;
+		0.5.wait;
+
+		/*
+		Onsets: a train of percussive hits. Played from a Routine with a gateless
+		synth that frees itself, rather than from a pattern: stopping a pattern
+		mid-note leaves /n_set messages addressed to nodes that have already gone,
+		and "Node not found" in a test log reads like a fault.
+		*/
+		track.reset;
+		SynthDef(\plotlib_test_hit, { |freq = 400, amp = 0.4|
+			var env = EnvGen.ar(Env.perc(0.001, 0.12), doneAction: 2);
+			OffsetOut.ar(0, (SinOsc.ar(freq) * env * amp) ! 2);
+		}).add;
+		s.sync;
+		source = Routine({ 12.do { Synth(\plotlib_test_hit); 0.25.wait } }).play;
+		3.2.wait;
+		ok.value("onsets were detected: " ++ track.marks.size ++ " marks for 12 hits",
+			track.marks.size > 6);
+		source.stop;
+		track.close;
+		0.5.wait;
+	}.value;
+
 	"".postln;
 	("checks: " ++ checks ++ ", failures: " ++ fails).postln;
 	if(fails > 0) { "*** FAILURES ***".postln } { "all live tests passed".postln };

@@ -79,3 +79,49 @@ s.boot;
 ~sg.close;
 ~vec.close;
 )
+
+
+// ---- analysis and mapping ----
+
+// What the descriptors do while a sound plays. Onsets tick through every panel.
+~tracks = PltTrack.analysis(0).front;
+~src = { Blip.ar(LFNoise0.kr(1).exprange(60, 300), 12, 0.2) ! 2 }.play;
+~src.free;
+~src = { WhiteNoise.ar(0.15) ! 2 }.play;         // flat, high centroid
+~src.free;
+~tracks.close;
+
+// Tracks of your own, from a pattern
+(
+~tracks = PltTrack([
+	(name: "freq", lo: 100, hi: 1000, unit: "Hz"),
+	(name: "amp", lo: 0, hi: 0.5)
+], 8, "what the pattern is doing").front;
+
+~seq = Pbind(
+	\dur, Pwhite(0.05, 0.2),
+	\freq, Pbrown(120, 900, 80),
+	\amp, Pwhite(0.05, 0.4)
+).collect { |ev| ~tracks.push([ev[\freq], ev[\amp]]); ev }.play;
+)
+~seq.stop; ~tracks.close;
+
+
+// A mapping curve: the same range, three warps, with the control at a quarter
+(
+~map = PltMap(\freq.asSpec, "exp", "the same range, three warps");
+~map.add(ControlSpec(20, 20000, \lin), "lin");
+~map.add(ControlSpec(20, 20000, 4), "curve 4");
+~map.marker_(0.25).front;
+)
+
+// Drag the control and watch all three at once
+(
+Routine({
+	(0, 0.005 .. 1).do { |t| ~map.marker_(t); 0.03.wait };
+}).play(AppClock);
+)
+
+// On a log output axis the exponential mapping is the straight line
+~map.logOutput_(true);
+~map.close;

@@ -1,0 +1,116 @@
+TITLE:: PltTrack
+summary:: Descriptors over time, as stacked small multiples with onsets marked
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltMap, Classes/Onsets, Classes/SpecCentroid
+
+DESCRIPTION::
+The analysis-to-mapping chain made visible: what a descriptor actually does while a
+sound plays, next to the others, on one clock, with onsets as ticks through every
+panel.
+
+A track given no code::lo:: and code::hi:: autoscales over what is currently
+visible, which is usually right for a descriptor whose range nobody remembers.
+
+The time axis reads seconds ago, from code::span.neg:: to 0.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: specs
+An Array of Events describing the tracks:
+code::
+(name: "loudness", lo: 0, hi: 64, unit: "sones", colorKey: \ink)
+::
+code::lo:: and code::hi:: may be left out, in which case the track autoscales.
+argument:: span
+Seconds visible.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: analysis
+The built in analysis of one bus: link::Classes/Loudness::,
+link::Classes/SpecCentroid::, link::Classes/SpecFlatness:: and
+link::Classes/Onsets::. All four are core UGens, so nothing extra has to be
+installed.
+argument:: bus
+argument:: server
+argument:: span
+argument:: title
+argument:: width
+argument:: height
+
+INSTANCEMETHODS::
+
+METHOD:: push
+One frame: an Array in track order, or an Event keyed by track name. Values that are
+not numbers are skipped rather than drawn.
+code::
+t.push([2000, 0.3]);
+t.push((cutoff: 3000, q: 0.5));
+::
+argument:: values
+argument:: time
+Defaults to now. Pass it to place a frame yourself.
+
+METHOD:: mark
+An onset, drawn as a tick through every panel.
+
+METHOD:: reset
+METHOD:: rangeOf
+The visible range of one track: its own if given, otherwise what is on screen.
+
+METHOD:: start
+METHOD:: stop
+The analysis synth and its responders. Rebuilt through link::Classes/ServerTree::,
+so they come back after cmd-period.
+
+METHOD:: tracks
+METHOD:: marks
+METHOD:: span
+METHOD:: rate
+Analysis frames per second.
+METHOD:: onsetThreshold
+Passed to link::Classes/Onsets::.
+METHOD:: fftSize
+METHOD:: panelGap
+METHOD:: maxPoints
+METHOD:: bus
+METHOD:: server
+METHOD:: replyId
+
+EXAMPLES::
+code::
+// the built in analysis of the output bus
+s.boot;
+t = PltTrack.analysis(0).front;
+x = { Blip.ar(LFNoise0.kr(1).exprange(60, 300), 12, 0.2) ! 2 }.play;
+x.free;
+x = { WhiteNoise.ar(0.2) ! 2 }.play;        // flat, high centroid
+x.free;
+t.close;
+
+// tracks of your own, pushed from a pattern
+(
+t = PltTrack([
+	(name: "freq", lo: 100, hi: 1000, unit: "Hz"),
+	(name: "amp", lo: 0, hi: 0.5)
+], 8, "what the pattern is doing").front;
+
+q = Pbind(
+	\dur, Pwhite(0.05, 0.2),
+	\freq, Pbrown(120, 900, 80),
+	\amp, Pwhite(0.05, 0.4)
+).collect { |ev|
+	t.push([ev[\freq], ev[\amp]]);
+	ev
+}.play;
+)
+q.stop; t.close;
+
+// anything with a number can drive it
+(
+t = PltTrack([(name: "cpu"), (name: "nodes")], 20, "server load").front;
+Routine({ loop { t.push([s.avgCPU, s.numSynths]); 0.2.wait } }).play(AppClock);
+)
+::

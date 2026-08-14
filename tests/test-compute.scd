@@ -23,6 +23,38 @@ ok = { |name, cond|
 };
 near = { |a, b, tol = 1e-9| (a - b).abs <= tol };
 
+"--- PltMap.points ---".postln;
+// the endpoints and the exponential middle are exact, known answers
+ok.value("an exponential spec hits both ends and the geometric middle", {
+	var p = PltMap.points(\freq.asSpec, 101);
+	near.value(p[1].first, 20, 1e-6)
+		and: { near.value(p[1].last, 20000, 1e-6) }
+		and: { near.value(p[1][50], sqrt(20 * 20000), 0.01) }
+}.value);
+ok.value("a linear spec gives the arithmetic middle", {
+	var p = PltMap.points(ControlSpec(20, 20000, \lin), 101);
+	near.value(p[1][50], (20 + 20000) / 2, 1e-6)
+}.value);
+ok.value("inputs run from 0 to 1", {
+	var p = PltMap.points(\amp.asSpec, 50);
+	near.value(p[0].first, 0) and: { near.value(p[0].last, 1) }
+		and: { p[0] == p[0].sort }
+}.value);
+// a ControlSpec, a Warp and a Function all have to go through one door
+ok.value("a Warp maps like the spec it came from", {
+	near.value(PltMap.mapWith(ExponentialWarp(ControlSpec(20, 20000, \exp)), 0.5),
+		sqrt(20 * 20000), 0.01)
+}.value);
+ok.value("a Function is called with the control value",
+	near.value(PltMap.mapWith({ |x| x * x }, 0.25), 0.0625, 1e-9));
+ok.value("a Symbol resolves to its spec", PltMap.asSpec(\amp).isKindOf(ControlSpec));
+ok.value("a curve spec sits between linear and exponential at the same input", {
+	var lin = PltMap.mapWith(ControlSpec(20, 20000, \lin), 0.25);
+	var curved = PltMap.mapWith(ControlSpec(20, 20000, 4), 0.25);
+	var exp = PltMap.mapWith(ControlSpec(20, 20000, \exp), 0.25);
+	(exp < curved) and: { curved < lin }
+}.value);
+
 "--- PltWave.envelope ---".postln;
 ok.value("a full scale sine gives the right envelope and RMS", {
 	var sig = Signal.fill(4096, { |i| sin(i * 2pi / 64) });

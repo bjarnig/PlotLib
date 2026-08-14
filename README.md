@@ -1,6 +1,6 @@
 # PlotLib
 
-Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, a live event scatter, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope and envelopes.
+Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, a live event scatter, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks and mapping curves.
 
 ![bifurcation diagram of the logistic map](images/bifurcation.png)
 
@@ -63,6 +63,14 @@ pure helpers. Reference under **PlotLib**, with more in
 <img src="images/vector-wide.png" alt="vectorscope" height="300">
 <img src="images/envelope-curves.png" alt="envelope with mixed curve types" height="300">
 </p>
+
+### Analysis and mapping
+
+`PltTrack` puts descriptors on one clock with onsets as ticks through every panel; `PltTrack.analysis(0)` gives loudness, spectral centroid and flatness from a bus with nothing else to install. `PltMap` answers the question a synthesis class asks constantly: the slider moved a quarter of the way, so what happened? At 0.25, `\freq` gives 112 Hz where the linear equivalent gives 5015.
+
+![descriptors over time with onset ticks](images/track-analysis.png)
+
+![the same range mapped three ways](images/map-warps.png)
 
 ### Meter and spectrum
 

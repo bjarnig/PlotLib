@@ -1,7 +1,7 @@
 TITLE:: PlotLib
 summary:: Plots for the things SuperCollider does not draw by itself
 categories:: Libraries>PlotLib
-related:: Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum, Classes/PltWave, Classes/PltSpectrogram, Classes/PltVector, Classes/PltEnvelope
+related:: Classes/PltTrack, Classes/PltMap, Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum, Classes/PltWave, Classes/PltSpectrogram, Classes/PltVector, Classes/PltEnvelope
 
 DESCRIPTION::
 A set of link::Classes/UserView:: plots with one palette, one set of axes and one
@@ -43,6 +43,9 @@ pixel column.
 ## link::Classes/PltVector:: || vectorscope: one channel against the other.
 ## link::Classes/PltEnvelope:: || an Env with its breakpoints, curves and release
 node.
+## link::Classes/PltTrack:: || descriptors over time as stacked small multiples,
+with onsets marked.
+## link::Classes/PltMap:: || a mapping curve: what a control does to a value.
 ::
 
 SECTION:: How the classes are shaped
@@ -92,6 +95,10 @@ PltWave.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
 PltSpectrogram.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
 PltVector.live(0).front;
 PltEnvelope(Env.perc(0.01, 0.4)).front;
+
+// analysis and mapping
+PltTrack.analysis(0).front;
+PltMap(\freq.asSpec).add(ControlSpec(20, 20000, \lin), "linear").marker_(0.25).front;
 ::
 
 More in the strong::examples:: folder of the quark, and the tests in

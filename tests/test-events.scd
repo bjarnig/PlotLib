@@ -91,6 +91,39 @@ Routine({
 
 	ok.value("reset empties it", { p.reset; p.events.size == 0 }.value);
 
+	"--- PltTrack, fed from the language ---".postln;
+	{
+		var t = PltTrack([(name: "cutoff", lo: 100, hi: 8000), (name: "q")], 10,
+			"track test");
+		var now = Main.elapsedTime;
+		t.push([2000, 0.3], now);
+		t.push((cutoff: 3000, q: 0.5), now + 0.1);       // by name, not by position
+		ok.value("both push forms land in the right tracks",
+			(t.tracks[0][\points].collect { |p| p[1] } == [2000, 3000])
+				and: { t.tracks[1][\points].collect { |p| p[1] } == [0.3, 0.5] });
+
+		ok.value("a track with lo and hi keeps its own range",
+			t.rangeOf(t.tracks[0], now) == [100, 8000]);
+		ok.value("a track without them autoscales to what is visible", {
+			var range = t.rangeOf(t.tracks[1], now + 0.2);
+			(range[1] > 0.5) and: { range[1] < 0.7 }
+		}.value);
+
+		t.mark(now);
+		ok.value("onsets are kept as marks", t.marks.size == 1);
+		ok.value("a non-numeric frame is skipped rather than drawn", {
+			var before = t.tracks[0][\points].size;
+			t.push([sqrt(-1), nil], now + 0.2);
+			t.tracks[0][\points].size == before
+		}.value);
+		ok.value("reset empties tracks and marks", {
+			t.reset;
+			(t.tracks[0][\points].size == 0) and: { t.marks.size == 0 }
+		}.value);
+		t.close;
+	}.value;
+	0.3.wait;
+
 	"--- window handling on the base class ---".postln;
 	ok.value("alwaysOnTop returns the view, so it can end a chain",
 		p.alwaysOnTop === p);

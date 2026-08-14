@@ -1,0 +1,98 @@
+TITLE:: PltMap
+summary:: A mapping curve: what a control does to a value
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/ControlSpec, Classes/Warp, Classes/PltTrack
+
+DESCRIPTION::
+Input across, output up. This is the plot for the question a synthesis class asks
+all the time: the slider moved a quarter of the way, so what happened to the sound?
+
+An exponential frequency spec and a linear one are indistinguishable as numbers in
+a SynthDef and completely different here. At a control value of 0.25, code::\freq::
+gives 112 Hz and the linear equivalent gives 5015.
+
+Takes a link::Classes/ControlSpec::, a Symbol that names one (code::\freq::,
+code::\amp::, code::\pan::), a link::Classes/Warp::, or a Function of a value from 0
+to 1. Several can be overlaid and compared.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: spec
+argument:: label
+Shown in the legend. Made up from the spec if left out.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: function
+A Function over a domain of its own rather than over 0 to 1.
+code::
+PltMap.function({ |midi| midi.midicps }, 24, 108, "midi to Hz").front;
+::
+
+METHOD:: points
+The curve as plain data: code::[inputs, outputs]::, inputs from 0 to 1.
+
+METHOD:: mapWith
+One value through whichever kind of mapping it is. A ControlSpec, a Warp and a
+Function all answer here.
+
+METHOD:: asSpec
+Resolves a Symbol to its spec and passes anything else through.
+
+INSTANCEMETHODS::
+
+METHOD:: add
+Overlay another mapping, to be compared with the first. Colours come from the theme
+in turn, and the legend is stacked in a corner: mappings that share a range all end
+at the same value, so a label at the end of each curve lands on top of the others.
+
+METHOD:: marker
+METHOD:: marker_
+Where the control currently sits, from 0 to 1. Drawn as a line with a dot on each
+curve, and the mapped values printed in the caption.
+code::
+(
+m = PltMap(\freq.asSpec).front;
+Routine({ (0, 0.01 .. 1).do { |t| m.marker_(t); 0.05.wait } }).play(AppClock);
+)
+::
+
+METHOD:: valuesAtMarker
+The mapped value of every curve at the marker.
+
+METHOD:: logOutput
+A logarithmic output axis, where an exponential mapping is the straight line and a
+linear one is the curve. Often the clearest way to see what a warp does.
+
+METHOD:: curves
+METHOD:: columns
+METHOD:: showLabels
+
+EXAMPLES::
+code::
+// the same range mapped three ways
+(
+m = PltMap(\freq.asSpec, "exp", "the same range, three warps");
+m.add(ControlSpec(20, 20000, \lin), "lin");
+m.add(ControlSpec(20, 20000, 4), "curve 4");
+m.marker_(0.25).front;
+)
+
+// on a log output axis
+(
+PltMap(\freq.asSpec, "exp").add(ControlSpec(20, 20000, \lin), "lin")
+	.logOutput_(true).marker_(0.25).front;
+)
+
+// amplitude: a linear fader against a squared one, which is what an ear expects
+(
+PltMap({ |t| t }, "linear", "fader laws")
+	.add({ |t| t.squared }, "squared")
+	.add({ |t| t.dbamp * 0 + t.lincurve(0, 1, 0, 1, -4) }, "curve -4").front;
+)
+
+// a spec of your own
+PltMap(ControlSpec(0.001, 4, \exp, units: "s"), "delay time").front;
+::

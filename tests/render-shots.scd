@@ -152,6 +152,40 @@ Routine({
 			"independent noise"));
 	}.value;
 
+	// analysis and mapping
+	{
+		var m, t, now;
+		m = PltMap(\freq.asSpec, "exp", "the same range, three warps");
+		m.add(ControlSpec(20, 20000, \lin), "lin");
+		m.add(ControlSpec(20, 20000, 4), "curve 4");
+		m.marker_(0.25);
+		shot.value("map-warps", m);
+
+		m = PltMap(\freq.asSpec, "exp", "log output axis");
+		m.add(ControlSpec(20, 20000, \lin), "lin");
+		m.logOutput_(true).marker_(0.25);
+		shot.value("map-log", m);
+
+		// placed times, so the picture is the same on every run
+		t = PltTrack([
+			(name: "loudness", lo: 0, hi: 64, unit: "sones", colorKey: \ink),
+			(name: "centroid", lo: 100, hi: 8000, unit: "Hz", colorKey: \mint),
+			(name: "flatness", lo: 0, hi: 1, colorKey: \gold)
+		], 10, "descriptors with onsets", 900, 520);
+		now = Main.elapsedTime;
+		400.do { |i|
+			var time = now - 10 + (i * 10 / 400);
+			var phase = i / 400;
+			t.push([
+				(sin(phase * 8pi) * 20 + 30).max(0),
+				1000 + (sin(phase * 3pi) * 700) + 400.0.rand,
+				0.2 + (sin(phase * 5pi) * 0.15) + 0.05.rand
+			], time);
+			if((i % 47) == 3) { t.mark(time) };
+		};
+		shot.value("track-analysis", t);
+	}.value;
+
 	"done".postln;
 	0.exit;
 }).play(AppClock);
