@@ -1,10 +1,6 @@
 /*
-Phase portrait of a two dimensional map: x against y, so an attractor shows as
-a shape rather than as a time series.
-
-	PltPhase({ |x, y| [1 - (1.4 * x * x) + y, 0.3 * x] }, 0.1, 0.1, "Henon").front;
-
-mapFunc takes x and y and returns the next pair.
+Phase portrait of a two dimensional map: x against y, so an attractor shows as a
+shape rather than as a time series. mapFunc takes (x, y) and returns the next pair.
 */
 PltPhase : PltScatter {
 	var <mapFunc, <x0, <y0;

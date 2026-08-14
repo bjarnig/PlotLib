@@ -124,6 +124,31 @@ Routine({
 	}.value;
 	0.3.wait;
 
+	"--- PltMeter zones ---".postln;
+	{
+		var m = PltMeter(4, 0, nil, "zone test");
+		ok.value("the boundaries are inclusive at the bottom of each zone", {
+			[[-40, \safe], [-12.1, \safe], [-12, \warn], [-3.1, \warn],
+				[-3, \clip], [0, \clip], [3, \clip]].every { |pair|
+				m.zoneOf(pair[0]) == pair[1]
+			}
+		}.value);
+		// RMS almost never reaches 0 dBFS, so a red zone starting there would never
+		// show in the bar; these are the hardware thresholds instead
+		ok.value("red starts below full scale", m.clipDb < 0);
+		ok.value("the zones are ordered", m.warnDb < m.clipDb);
+		ok.value("clipping is about full scale, not the red zone", {
+			m.pushFrame([0.9, 0, 0, 0], [0.7, 0, 0, 0]);      // -0.9 dB, in the red
+			(m.zoneOf(PlotLib.ampDb(0.9)) == \clip) and: { m.clipping.not }
+		}.value);
+		ok.value("full scale does report clipping", {
+			m.pushFrame([1.0, 0, 0, 0], [0.8, 0, 0, 0]);
+			m.clipping
+		}.value);
+		m.close;
+	}.value;
+	0.3.wait;
+
 	"--- window handling on the base class ---".postln;
 	ok.value("alwaysOnTop returns the view, so it can end a chain",
 		p.alwaysOnTop === p);

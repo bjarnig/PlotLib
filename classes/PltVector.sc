@@ -1,18 +1,10 @@
 /*
-Vectorscope: one channel against the other, which is how stereo width, phase and
-mono compatibility become visible.
+Vectorscope: one channel against the other, which is how stereo width and phase
+become visible. Identical channels draw a vertical line, opposite ones a horizontal
+line, unrelated ones a cloud; the diagonals are the mid and side axes.
 
-	PltVector.live(0).front;                      // the first two output channels
-	PltVector.fromSoundFile(path).front;          // a file
-	PltVector(leftArray, rightArray).front;       // anything
-
-A vertical line means the two channels are identical, a horizontal line means
-they are opposite in phase, a circle means they are unrelated. The correlation in
-the caption says the same thing as a number: 1 identical, 0 unrelated, -1
-inverted.
-
-The diagonals are the mid and side axes, so a cloud leaning along one of them is
-leaning toward mono or toward difference.
+Older frames are kept and drawn fainter, which is what makes a moving image
+readable rather than a flicker.
 */
 PltVector : PltView {
 	var <xs, <ys, <trails;
@@ -53,12 +45,8 @@ PltVector : PltView {
 			.prSetLive(bus, server ? Server.default, frames)
 	}
 
-	/*
-	Correlation of two channels: 1 identical, 0 unrelated, -1 inverted.
-
-	Computed about zero rather than about the mean, because a DC offset is a fault
-	in audio and should not be quietly removed from the reading.
-	*/
+	// 1 identical, 0 unrelated, -1 inverted. About zero rather than the mean: a DC
+	// offset is a fault in audio, not something to remove from the reading.
 	*correlation { |left, right|
 		var n = left.size.min(right.size), sxy = 0, sxx = 0, syy = 0;
 		if(n == 0) { ^0 };

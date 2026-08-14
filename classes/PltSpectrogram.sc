@@ -1,19 +1,11 @@
 /*
-Scrolling spectrogram: time across, frequency up, magnitude as brightness.
+Scrolling spectrogram: time across, frequency up, magnitude as brightness. Live
+from a bus, or offline from a file. FreqScope is one slice moving in time; this
+keeps the history, which is where the structure of a sound shows.
 
-	x = PltSpectrogram(0).front;          // the left output channel
-	x.logFreq_(true);
-	x.close;
-
-	PltSpectrogram.fromSoundFile(path).front;    // a whole file, offline
-
-SuperCollider has FreqScope, which is one slice moving in time. This keeps the
-history, which is where the structure of a sound actually shows.
-
-Each frame writes ONE column into an Image and the Image is blitted, rather than
-a UserView redrawing a few hundred rects per row per frame. The column ring
-buffers: writeCol advances and wraps, and drawing takes two pieces so the newest
-column is always at the right edge.
+Each frame writes one column into an Image which is then blitted, rather than
+redrawing hundreds of rects. The columns ring buffer, and drawing takes two pieces
+so the newest is always at the right edge.
 */
 PltSpectrogram : PltView {
 	var <bus, <fftSize, <server;
@@ -34,11 +26,7 @@ PltSpectrogram : PltView {
 			.initPltSpectrogram(bus, fftSize, server ? Server.default)
 	}
 
-	/*
-	A whole soundfile, analysed offline. Runs an NRT-free path: the file is read
-	in the language and transformed with the FFT in Signal, so no server is
-	needed and the result is the same on every run.
-	*/
+	// Offline, in the language: no server needed, same result on every run.
 	*fromSoundFile { |path, fftSize = 1024, hop = 0.25, title,
 		width = 900, height = 420|
 		var plot = super.new(title ?? { PathName(path).fileName }, width, height)
@@ -49,12 +37,8 @@ PltSpectrogram : PltView {
 		^plot
 	}
 
-	/*
-	Magnitude frames of a soundfile: an Array of frames, each fftSize/2 + 1 long.
-
-	Signal:fft wants a real and an imaginary Signal and a cosine table; the
-	magnitudes come out as the hypotenuse of the two halves.
-	*/
+	// Frames of fftSize/2 + 1 magnitudes. Signal:fft wants real and imaginary
+	// Signals plus a cosine table; the magnitudes are the hypotenuse.
 	*framesFromSoundFile { |path, fftSize = 1024, hop = 0.25|
 		var sf = SoundFile.openRead(path.standardizePath);
 		var data, chans, frames, step, out, cosTable, window, half;
@@ -224,13 +208,8 @@ PltSpectrogram : PltView {
 		})
 	}
 
-	/*
-	One column of the picture, top row first, as values from 0 to 1.
-
-	Each row takes the loudest bin that falls in it, so a partial that shares a
-	row with silence still shows. Pure, so the mapping can be tested without a
-	window.
-	*/
+	// One column, top row first, 0 to 1. Each row takes the loudest bin in it, so
+	// a partial sharing a row with silence still shows. Pure, so it is testable.
 	*column { |frame, rows, minHz = 40, maxHz = 12000, floorDb = -78, ceilDb = 0,
 		logFreq = false, sampleRate = 48000, fftSize = 1024|
 		var nyquist = sampleRate / 2;
@@ -254,12 +233,8 @@ PltSpectrogram : PltView {
 				// sharing a row with silence still shows
 				(iLo .. iHi).do { |i| m = max(m, frame[i]) };
 			} {
-				/*
-				The row is narrower than a bin, which is the case across the whole
-				low end of a log axis: at 2048 points there are nine bins below
-				200 Hz. Repeating the bin draws them as horizontal bands, so
-				interpolate between neighbours at the row's centre instead.
-				*/
+				// Narrower than a bin, which is the whole low end of a log axis:
+				// repeating the bin drew horizontal bands, so interpolate.
 				var centre = (fLo + fHi) * 0.5;
 				var pos = (centre / nyquist * (bins - 1)).clip(0, bins - 1);
 				var i0 = pos.floor.asInteger;
@@ -279,16 +254,15 @@ PltSpectrogram : PltView {
 		span = analysis[\duration];
 		pollRate = frames.size / span.max(1e-9);
 		offlineSampleRate = analysis[\sampleRate];
-		// pending BEFORE prRebuild: refresh defers, and a defer from the AppClock
-		// runs immediately, so a rebuild first would draw with nothing pending and
-		// never come back
+		// pending BEFORE prRebuild: a defer from the AppClock runs immediately, so
+		// rebuilding first would draw with nothing pending and never come back
 		pending = frames;
 		this.prRebuild;
 		^this
 	}
 
-	// the file's rate offline, the server's when live: getting this wrong puts
-	// every partial on the wrong row
+	// the file's rate offline, the server's when live; wrong here puts every
+	// partial on the wrong row
 	sampleRate {
 		^offlineSampleRate ?? { if(server.notNil) { server.sampleRate } ? 48000 }
 	}
@@ -324,8 +298,8 @@ PltSpectrogram : PltView {
 	drawData { |v, r, b|
 		var img, w = r.width;
 		this.prEnsureImage(r);
-		// read the image AFTER this: writing pending frames replaces it, and a
-		// local captured earlier would be blitting a freed image, silently
+		// read image AFTER this: pending frames replace it, and a local captured
+		// earlier blits a freed image, silently
 		if(pending.notNil) { this.prDrawPending };
 		img = image;
 		if((filled == 0) or: { img.isNil }) { ^this };

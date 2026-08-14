@@ -49,7 +49,6 @@ in turn, and the legend is stacked in a corner: mappings that share a range all 
 at the same value, so a label at the end of each curve lands on top of the others.
 
 METHOD:: marker
-METHOD:: marker_
 Where the control currently sits, from 0 to 1. Drawn as a line with a dot on each
 curve, and the mapped values printed in the caption.
 code::

@@ -1,5 +1,10 @@
 /*
-Compile every code example in the help files and in examples/.
+Check the help: that every page parses, that every class has one, and that every
+code example in the help files and in examples/ compiles.
+
+A page that does not parse is invisible: SCDoc writes no HTML for it and the help
+browser answers ERR_FILE_NOT_FOUND. One unterminated strong:: did that to
+PltMeter, and nothing else noticed.
 
 	sclang tests/check-docs.scd
 
@@ -88,6 +93,41 @@ files = ["HelpSource/Classes", "HelpSource/Overviews", "examples"].collect { |di
 }.flatten.select { |p| p.endsWith(".schelp") or: { p.endsWith(".scd") } };
 
 ("checking " ++ files.size ++ " files").postln;
+
+// --- every schelp parses, and every class has one ---
+{
+	var helpDirs = [root +/+ "HelpSource/Classes", root +/+ "HelpSource/Overviews"];
+	var pages = helpDirs.collect { |d| (d +/+ "*.schelp").pathMatch }.flatten;
+	var documented, missing;
+
+	pages.do { |path|
+		var name = PathName(path).fileName;
+		var doc = try { SCDoc.parseFileFull(path) };
+		checks = checks + 1;
+		if(doc.isNil) {
+			fails = fails + 1;
+			("  FAIL  " ++ name ++ " does not parse, so no help page is generated").postln;
+		};
+		// SCDoc wants a property setter documented under its plain name
+		File.readAllString(path).split($\n).do { |line|
+			if(line.beginsWith("METHOD:: ") and: { line.stripWhiteSpace.endsWith("_") }) {
+				checks = checks + 1;
+				fails = fails + 1;
+				("  FAIL  " ++ name ++ ": " ++ line.stripWhiteSpace
+					++ " should be documented without the underscore").postln;
+			};
+		};
+	};
+
+	documented = pages.collect { |p| PathName(p).fileNameWithoutExtension };
+	missing = PlotLib.classes.collect { |c| c.name.asString }
+		.reject { |n| documented.includesEqual(n) };
+	checks = checks + 1;
+	if(missing.size > 0) {
+		fails = fails + 1;
+		("  FAIL  no help file for: " ++ missing.join(", ")).postln;
+	};
+}.value;
 
 files.do { |path|
 	var name = PathName(path).fileName;

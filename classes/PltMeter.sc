@@ -1,13 +1,9 @@
 /*
-Live level meter: one vertical bar per channel, RMS filled, peak as a line,
-peak held for a moment, clipping marked at the top.
+Live level meter: one bar per channel, RMS filled in three zones, peak as a line,
+the peak held for a moment, clipping marked above the frame.
 
-	m = PltMeter(2, 0).front;      // the first two output channels
-	m.close;                       // frees the synth and the responder
-
-The analysis runs on the server (SendPeakRMS at the tail of the root node) and
-arrives as OSC. pushFrame does the same job from the language, so the view can
-be driven from anything, including a test.
+SendPeakRMS at the tail of the root node does the analysis; pushFrame does the same
+job from the language, so the view can be driven from anything.
 */
 PltMeter : PltView {
 	classvar nextId = 0;
@@ -15,12 +11,15 @@ PltMeter : PltView {
 	var <numChannels, <bus, <server, <replyId;
 	var <peaks, <rmss, <holds, <holdStamps;
 	var synth, responder, restartFunc;
-	// peakLag is SendPeakRMS's own decay. It defaults to 3 seconds there, which
-	// makes the peak line fall slowly and duplicate the hold line; keep it short
-	// and let holdTime do the holding.
+	// SendPeakRMS's own peak decay defaults to 3 s there, which duplicates the hold
+	// line; kept short so holdTime does the holding.
 	var <>floorDb = -60, <>holdTime = 1.5, <>replyRate = 20, <>peakLag = 0.1;
 	var rmsColor, peakColor, clipColor;
-	var <>rmsColorKey = \ink, <>peakColorKey = \trace, <>clipColorKey = \rose;
+	// Three zones in segments: green below warnDb, yellow to clipDb, red above.
+	// Hardware thresholds, not full scale, which RMS never reaches.
+	var <>safeColorKey = \mint, <>warnColorKey = \gold, <>clipColorKey = \rose;
+	var <>peakColorKey = \trace, <>rmsColorKey;
+	var <>warnDb = -12, <>clipDb = -3, <>zones = true;
 
 	// One bar plus its gap per channel, so a stereo meter is a narrow window and a
 	// sixteen channel one is a wide one, rather than both being 300 pixels.
@@ -50,9 +49,8 @@ PltMeter : PltView {
 		// the bottom pad holds the channel numbers and the caption line under them
 		padLeft = 46; padBottom = 42; padRight = 14;
 		yLabel = "dB";
-		// cmd-period frees the analysis synth and ServerTree fires straight after.
-		// Without re-registering there, the view keeps showing the last levels it
-		// received, for ever, which is worse than showing nothing.
+		// cmd-period frees the synth; without this the view shows the last levels
+		// it received for ever, which is worse than showing nothing.
 		restartFunc = { this.prRestart };
 		ServerTree.add(restartFunc, server);
 		if(server.serverRunning) { this.start };
@@ -116,20 +114,36 @@ PltMeter : PltView {
 		^this
 	}
 
-	// A little lighter than the plot ink: a solid bar of a colour reads heavier
-	// than a scatter of the same colour does. Not on a light ground, where
-	// lightening is what makes a fill disappear.
-	rmsColor {
-		^rmsColor ?? {
-			var base = PlotLib.color(rmsColorKey);
-			if(PlotLib.isLight) { base } { base.blend(Color.white, 0.22) }
-		}
+	// Only the safe zone is lightened, being a large solid area; whitening the
+	// gold turns it khaki and costs the zones their distinctness.
+	prBarColor { |key|
+		var base = PlotLib.color(key);
+		if(key != safeColorKey) { ^base };
+		^if(PlotLib.isLight) { base } { base.blend(Color.white, 0.22) }
 	}
+
+	// The single-colour bar, for zones_(false) or an explicit override.
+	rmsColor { ^rmsColor ?? { this.prBarColor(rmsColorKey ? safeColorKey) } }
 	rmsColor_ { |c| rmsColor = c; ^this }
 	peakColor { ^peakColor ?? { PlotLib.color(peakColorKey) } }
 	peakColor_ { |c| peakColor = c; ^this }
 	clipColor { ^clipColor ?? { PlotLib.color(clipColorKey) } }
 	clipColor_ { |c| clipColor = c; ^this }
+
+	// Which zone a level in dB falls in: \safe, \warn or \clip.
+	zoneOf { |db|
+		if(db >= clipDb) { ^\clip };
+		if(db >= warnDb) { ^\warn };
+		^\safe
+	}
+
+	prZoneColor { |db|
+		^switch(this.zoneOf(db),
+			\clip, { this.clipColor },
+			\warn, { this.prBarColor(warnColorKey) },
+			{ this.prBarColor(safeColorKey) }
+		)
+	}
 
 	// True while any channel has hit full scale within the hold time.
 	clipping { ^holds.any { |h| h >= 1.0 } }
@@ -165,14 +179,35 @@ PltMeter : PltView {
 	drawData { |v, r, b|
 		numChannels.do { |i|
 			var slot = this.prSlot(r, i);
-			var rmsY = this.yPix(PlotLib.ampDb(rmss[i], floorDb), r, b);
-			var peakY = this.yPix(PlotLib.ampDb(peaks[i], floorDb), r, b);
+			var rmsDb = PlotLib.ampDb(rmss[i], floorDb);
+			var rmsY = this.yPix(rmsDb, r, b);
+			var peakDb = PlotLib.ampDb(peaks[i], floorDb);
+			var peakY = this.yPix(peakDb, r, b);
 			var holdY = this.yPix(PlotLib.ampDb(holds[i], floorDb), r, b);
 
-			Pen.fillColor = this.rmsColor.copy.alpha_(PlotLib.alphaFor(0.8));
-			Pen.fillRect(Rect(slot.left, rmsY, slot.width, r.bottom - rmsY));
+			if(zones and: { rmsColor.isNil }) {
+				// one segment per zone the bar passes through, bottom upward
+				[[floorDb, warnDb, safeColorKey], [warnDb, clipDb, warnColorKey],
+					[clipDb, 0, clipColorKey]].do { |seg|
+					var lo = seg[0], hi = seg[1].min(rmsDb), top, bottom;
+					if(rmsDb > lo) {
+						top = this.yPix(hi, r, b);
+						bottom = this.yPix(lo, r, b);
+						Pen.fillColor = if(seg[2] == clipColorKey) { this.clipColor } {
+							this.prBarColor(seg[2])
+						}.copy.alpha_(PlotLib.alphaFor(0.8));
+						Pen.fillRect(Rect(slot.left, top, slot.width,
+							(bottom - top).max(1)));
+					};
+				};
+			} {
+				Pen.fillColor = this.rmsColor.copy.alpha_(PlotLib.alphaFor(0.8));
+				Pen.fillRect(Rect(slot.left, rmsY, slot.width, r.bottom - rmsY));
+			};
 
-			Pen.strokeColor = if(peaks[i] >= 1.0) { this.clipColor } { this.peakColor };
+			Pen.strokeColor = if(zones) { this.prZoneColor(peakDb) } {
+				if(peaks[i] >= 1.0) { this.clipColor } { this.peakColor }
+			};
 			Pen.width = PlotLib.lineWidth(1.5);
 			Pen.line(Point(slot.left, peakY), Point(slot.right, peakY));
 			Pen.stroke;

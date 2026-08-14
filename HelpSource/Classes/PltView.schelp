@@ -71,15 +71,11 @@ Routine({ var p = PltScatter(x, y).front; 0.4.wait; p.writeImage("~/plot.png"); 
 ::
 
 METHOD:: alwaysOnTop
-Show the window, keep it above the others, and return the view, so it reads as an
-instruction and can end a chain.
+Called with no argument it shows the window, keeps it above the others, and returns
+the view, so it reads as an instruction and can end a chain. The setter form takes a
+Boolean, so it can be turned off again.
 code::
 m = PltMeter(2, 0).alwaysOnTop;
-::
-
-METHOD:: alwaysOnTop_
-The same as a setter, so it can be turned off again.
-code::
 m.alwaysOnTop_(false);
 ::
 
@@ -88,7 +84,6 @@ Whether the flag is set. Qt applies it when the window is shown, so on a window
 that has not been fronted yet this reads false until it appears.
 
 METHOD:: position
-METHOD:: position_
 Where the window sits, the same way link::Classes/ServerMeter:: does it, so a set of
 plots can be placed rather than stacked.
 

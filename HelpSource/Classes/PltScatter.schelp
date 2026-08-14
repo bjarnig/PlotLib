@@ -21,17 +21,17 @@ argument:: height
 
 INSTANCEMETHODS::
 
-METHOD:: data_
+METHOD:: data
 Replace the data and refresh. The visible range is recomputed from it.
 
-METHOD:: limits_
+METHOD:: limits
 Fix the visible range instead of taking it from the data.
 argument:: xLo
 argument:: xHi
 argument:: yLo
 argument:: yHi
 
-METHOD:: marker_
+METHOD:: marker
 Draw a vertical line at this x value, for "the parameter is here". Refreshes, so it
 can be dragged from a slider.
 

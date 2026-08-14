@@ -1,15 +1,9 @@
 /*
-Live spectrum analyser: magnitude against frequency, linear by default so
-partials stay countable, logarithmic when the whole range matters.
+Live spectrum: magnitude against frequency, linear by default so partials stay
+countable, logarithmic when the whole range matters.
 
-	x = PltSpectrum(0).front;      // input bus 0, the left output channel
-	x.maxHz_(4000);
-	x.logFreq_(true);
-	x.close;
-
-An FFT UGen keeps writing frames into a buffer on the server and the language
-polls that buffer. A poll can land mid-frame, which shows as a moment of noise
-and is not worth locking against for a picture.
+An FFT UGen writes frames into a buffer and the language polls it. A poll can land
+mid-frame, which shows as a moment of noise and is not worth locking against.
 */
 PltSpectrum : PltView {
 	var <bus, <fftSize, <server;
@@ -100,13 +94,8 @@ PltSpectrum : PltView {
 		^this
 	}
 
-	/*
-	Magnitudes from the contents of an FFT buffer.
-
-	scsynth stores a frame packed as [DC, nyquist, re1, im1, re2, im2, ...], so
-	the two purely real bins come first and are not a complex pair. Returns
-	fftSize/2 + 1 magnitudes, bin 0 to nyquist.
-	*/
+	// scsynth packs a frame as [DC, nyquist, re1, im1, ...], so the two purely real
+	// bins come first. Returns fftSize/2 + 1 magnitudes, bin 0 to nyquist.
 	*magnitudes { |data|
 		var n = data.size;
 		var half = (n / 2).asInteger;
@@ -122,12 +111,8 @@ PltSpectrum : PltView {
 	// Bin centre frequency, for a given buffer size and sample rate.
 	*binFreq { |bin, fftSize, sampleRate = 48000| ^bin * sampleRate / fftSize }
 
-	/*
-	One frame of magnitudes; smoothed in time, and holding the peaks.
-
-	FFT output is unnormalised: a full scale sine under a Hann window peaks at
-	about fftSize/4, so scale by its reciprocal to put 0 dBFS at 0 dB.
-	*/
+	// FFT output is unnormalised: a full scale sine under a Hann window peaks at
+	// about fftSize/4, so scale by its reciprocal to put 0 dBFS at 0 dB.
 	pushFrame { |frame|
 		var scale = 4 / fftSize;
 		var decay = (holdDecayDb / pollRate.max(1)).neg.dbamp;   // dB per second

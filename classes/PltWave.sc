@@ -1,15 +1,9 @@
 /*
-Waveform of recorded material: one vertical line per pixel column, from the
-minimum to the maximum sample in that column, with the RMS drawn inside it.
+Waveform of recorded material: one vertical line per pixel column, from the lowest
+to the highest sample in it, with the RMS drawn inside. One panel per channel.
 
-	PltWave(Signal.sineFill(2048, [1, 0, 0.3]), 48000).front;
-	PltWave.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
-
-Signal:plot draws every sample, which is right for 512 samples and unusable for
-five million. A min and max per column stays legible at any length and never
-drops a peak, which a line through every Nth sample does.
-
-Multichannel material gets one panel per channel, stacked, sharing the time axis.
+Signal:plot draws every sample, which is right for 512 and unusable for five
+million. Min and max per column stays legible at any length and never drops a peak.
 */
 PltWave : PltView {
 	// one Event per channel: (mins:, maxs:, rms:)
@@ -20,10 +14,7 @@ PltWave : PltView {
 	var <dbScale = false, <>floorDb = -66, <>showRms = true, <>panelGap = 12;
 	var source;                    // (path:) or (data:), for zoom
 
-	/*
-	data is a collection of numbers for one channel, or a collection of those for
-	several: PltWave([left, right], 48000).
-	*/
+	// data: one channel of numbers, or several: PltWave([left, right], 48000).
 	*new { |data, sampleRate = 48000, title = "wave", columns = 900,
 		width = 900, height = 300|
 		^super.new(title, width, height).initPltWave(data, sampleRate, columns)
@@ -55,12 +46,8 @@ PltWave : PltView {
 		});
 	}
 
-	/*
-	Envelope of one channel: mins, maxs and RMS per column.
-
-	Columns are never more numerous than samples, so short material gives fewer
-	columns rather than empty ones.
-	*/
+	// mins, maxs and RMS per column. Columns never outnumber samples, so short
+	// material gives fewer columns rather than empty ones.
 	*envelope { |signal, columns = 900|
 		var n = signal.size, mins, maxs, rms;
 		if(n == 0) { ^(mins: [0], maxs: [0], rms: [0]) };
@@ -83,15 +70,8 @@ PltWave : PltView {
 		^(mins: mins, maxs: maxs, rms: rms)
 	}
 
-	/*
-	The same, read from a soundfile in chunks.
-
-	samplesPerColumn bounds the work: sclang would spend a long time visiting
-	every sample of a long file, so past that limit it visits an evenly spread
-	subset instead. The stride used is reported, never applied silently.
-
-	Returns (channels:, duration:, sampleRate:, numChannels:, stride:) or nil.
-	*/
+	// The same, in chunks. samplesPerColumn bounds the work: past it an evenly
+	// spread subset is visited, and the stride is reported, never silent.
 	*envelopeFromSoundFile { |path, columns = 900, startTime = 0, endTime,
 		samplesPerColumn = 2000|
 		var sf, chans, frames, startFrame, endFrame, span, stride, chunkFrames;
@@ -192,8 +172,8 @@ PltWave : PltView {
 
 	prSetSource { |argSource| source = argSource; ^this }
 
-	// Recompute over a time range. Needs a soundfile source: data given directly
-	// is already reduced to columns, and cannot be looked into more closely.
+	// Recompute over a time range. Needs a soundfile source: data handed in is
+	// already reduced to columns.
 	zoom { |startTime = 0, endTime, columns = 900|
 		var env;
 		if(source[\path].isNil) {

@@ -1,17 +1,10 @@
 /*
-A mapping curve: what a control does to a value. Input across, output up.
+A mapping curve: what a control does to a value, input across and output up. Takes
+a ControlSpec, a Symbol naming one, a Warp, or a Function of 0 to 1, and can
+overlay several to be compared.
 
-	PltMap(\freq.asSpec).front;
-	PltMap(\freq.asSpec).add(ControlSpec(20, 20000, \lin), "linear").front;
-	PltMap(\freq.asSpec).marker_(0.5).front;
-
-This is the plot for the question a synthesis class asks all the time: the slider
-moved a quarter of the way, so what happened to the sound? An exponential
-frequency spec and a linear one look identical as numbers in a SynthDef and
-completely different here.
-
-Takes a ControlSpec, a Symbol that names one (\freq, \amp, \pan), a Warp, or a
-Function of a value from 0 to 1. Several can be overlaid to be compared.
+An exponential frequency spec and a linear one are indistinguishable as numbers in
+a SynthDef and completely different here.
 */
 PltMap : PltView {
 	// one Event per curve: (spec:, label:, xs:, ys:, colorKey:)
@@ -30,12 +23,8 @@ PltMap : PltView {
 		^this.new({ |t| func.value(lo + (t * (hi - lo))) }, label, title, width, height)
 	}
 
-	/*
-	The curve as plain data: [inputs, outputs], with inputs from 0 to 1.
-
-	A ControlSpec, a Warp and a Function all answer to map or value, so the
-	caller does not have to care which it is.
-	*/
+	// [inputs, outputs], inputs from 0 to 1. ControlSpec, Warp and Function all
+	// go through mapWith, so callers need not know which they hold.
 	*points { |spec, columns = 240|
 		var xs = Array.fill(columns, { |i| i / (columns - 1).max(1) });
 		^[xs, xs.collect { |t| this.mapWith(spec, t) }]
@@ -150,12 +139,8 @@ PltMap : PltView {
 
 		};
 
-		/*
-		The legend goes in the top margin, outside the plot, as a row of swatches.
-		A label at the end of each curve collides when mappings share a range,
-		because they all end at the same value; a stacked legend inside the corner
-		then sits on top of the curves where they converge.
-		*/
+		// In the top margin: mappings sharing a range end at the same value, so
+		// per-curve labels collide and a corner legend sits on the curves.
 		if(showLabels) {
 			var x = r.left;
 			var font = PlotLib.font(9);

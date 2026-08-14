@@ -1,13 +1,11 @@
 /*
 Abstract base for every plot: window, drawing area, grid, frame, ticks, caption.
 
-A subclass provides
-	dataBounds  -> [xLo, xHi, yLo, yHi] in data units, or nil for no ticks
-	drawData    -> Pen calls, using xPix/yPix to place data
-	caption     -> one line under the plot (optional)
+A subclass provides dataBounds -> [xLo, xHi, yLo, yHi] or nil for no ticks,
+drawData -> Pen calls placed with xPix/yPix, and optionally caption.
 
-Drawing order is grid, data, frame, ticks, labels, so the frame and the text
-always stay on top of the data.
+Drawing order is grid, data, frame, ticks, labels, so the frame and the text stay
+on top of the data.
 */
 PltView {
 	var <window, <view;
@@ -25,15 +23,14 @@ PltView {
 			.resize_(5)
 			.background_(PlotLib.color(\bg))
 			.drawFunc_({ |v| this.prDraw(v) })
-			// escape closes, as it does in ServerMeter; the modifier test keeps
-			// cmd-escape and the like out of it
+			// escape closes; the modifier test keeps cmd-escape out of it
 			.keyDownAction_({ |v, char, modifiers|
 				if((char == 27.asAscii) and: { (modifiers & 16515072) == 0 }) {
 					window.close
 				};
 			});
-		// registered so a theme change reaches every open window; removing it on
-		// close is not optional, or the view is retained and keeps redrawing
+		// registered so a theme change reaches it; removing it on close is not
+		// optional, or the view is retained and keeps redrawing
 		PlotLib.views.add(this);
 		window.onClose_({ PlotLib.views.remove(this); this.free });
 	}
@@ -54,18 +51,8 @@ PltView {
 	front { window.front; ^this }
 	close { window.close; ^this }
 
-	/*
-	Keep the plot above other windows, for watching it while working elsewhere.
-
-	Called with no argument it shows the window and returns the view, so it reads
-	as an instruction and can end a chain:
-
-		m = PltMeter(2, 0).alwaysOnTop;
-
-	Ask with isAlwaysOnTop, and pass false to alwaysOnTop_ to turn it off again.
-	*/
-	// front first: the flag is only applied when the window is shown, so setting it
-	// on an unshown window reads back false until it appears
+	// With no argument: show, keep on top, return the view, so it can end a chain.
+	// Front first, since the flag only applies once the window is shown.
 	alwaysOnTop {
 		window.front;
 		window.alwaysOnTop_(true);
@@ -76,13 +63,8 @@ PltView {
 
 	isAlwaysOnTop { ^window.alwaysOnTop }
 
-	/*
-	Where the window sits, so a set of plots can be placed rather than stacked.
-
-	Window bounds go through Window.flipY, so y is measured from the BOTTOM of the
-	screen, not the top. Get and set are the same convention, so round tripping a
-	position works; a y typed by hand may not land where it reads.
-	*/
+	// Window bounds pass through Window.flipY, so y is measured from the bottom of
+	// the screen. Get and set share that convention, so a round trip works.
 	position { ^Point(window.bounds.left, window.bounds.top) }
 	position_ { |point|
 		point = point.asPoint;
@@ -138,11 +120,8 @@ PltView {
 		if(ticks) { this.prTicks(r, b, xLabels, yLabels) };
 	}
 
-	/*
-	Where the ticks go and what they say, in data units. A view with a
-	transformed axis overrides these four and gets a matching grid, matching
-	labels and no duplicated loops.
-	*/
+	// Where the ticks go and what they say, in data units. A transformed axis
+	// overrides these four and gets grid, labels and spacing in agreement.
 	xTickValues { |b| ^PlotLib.ticks(b[0], b[1], xTicks) }
 	yTickValues { |b| ^PlotLib.ticks(b[2], b[3], yTicks) }
 	xTickLabel { |value, b| ^PlotLib.fmt(value, b[1] - b[0]) }

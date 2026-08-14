@@ -7,6 +7,18 @@ DESCRIPTION::
 A vertical bar per channel: RMS filled, peak as a line, the peak held for a moment
 above it, and a red mark at the top when a channel has hit full scale.
 
+The bar is drawn in three zones, as a hardware meter is: green below
+strong::warnDb::, yellow between that and strong::clipDb::, red above. It is drawn
+in segments rather than recoloured as a whole, so a loud signal shows how much of it
+is in each zone. The peak line takes the colour of the zone it sits in.
+
+note::
+The zone thresholds are the hardware convention (-12 and -3 dB), not full scale. RMS
+almost never reaches 0 dBFS, so a red zone starting there would never appear in the
+bar. Actual clipping is a separate matter, reported by the mark above the frame and
+by strong::clipping::.
+::
+
 Analysis runs on the server with link::Classes/SendPeakRMS:: at the tail of the root
 node, so code::In.ar:: sees what everything else has written, and arrives as OSC.
 
@@ -30,11 +42,12 @@ whole server, inputs and outputs together. PltMeter is a meter you point at a bu
 and configure.
 
 table::
-## strong::  || strong::s.meter:: || strong::PltMeter::
+## strong::aspect:: || strong::s.meter:: || strong::PltMeter::
 ## busses || inputs and outputs in one window || one bus range per instance, any bus
 ## scale || fixed, -80 to 0, two labels || strong::floorDb::, with real dB ticks
 ## update rate || 10 Hz, a class variable || strong::replyRate::, 20 by default
 ## peak decay || peakLag 3 s, fixed || strong::peakLag:: 0.1, plus a held line for strong::holdTime::
+## zones || green, yellow, red at fixed fractions of the scale || green, yellow, red at strong::warnDb:: and strong::clipDb::, both settable
 ## clipping || colour change in the LevelIndicator || red line and a mark above the frame, and strong::clipping:: as a Boolean
 ## values in the language || none, they live in the widgets || strong::peaks::, strong::rmss::, strong::holds::
 ## driving it yourself || no || strong::pushFrame::
@@ -91,7 +104,33 @@ argument:: argPeaks
 argument:: argRms
 
 METHOD:: clipping
-True while any channel has hit full scale within the hold time.
+True while any channel has hit full scale within the hold time. Not the same as
+being in the red zone, which starts at strong::clipDb::.
+
+METHOD:: zoneOf
+Which zone a level in dB falls in: code::\safe::, code::\warn:: or code::\clip::.
+
+METHOD:: zones
+Three-zone colouring, on by default. With it off, or with an explicit
+strong::rmsColor::, the bar is one colour.
+
+METHOD:: warnDb
+Where yellow starts. -12 by default.
+
+METHOD:: clipDb
+Where red starts. -3 by default.
+
+METHOD:: safeColorKey
+METHOD:: warnColorKey
+METHOD:: clipColorKey
+Theme keys for the three zones: code::\mint::, code::\gold::, code::\rose::. The
+safe colour is lightened slightly, since it is a large solid area; the other two are
+used as they are, because whitening the gold turns it to khaki and costs the
+distinctness the zones exist for.
+code::
+m.warnColorKey_(\trace);                  // or brighten the palette itself
+PlotLib.setColor(\gold, Color(1, 0.85, 0.2));
+::
 
 METHOD:: peaks
 METHOD:: rmss
@@ -107,6 +146,7 @@ Frames per second from the server.
 METHOD:: peakLag
 See the note above.
 METHOD:: rmsColor
+Setting this overrides the zones with one colour.
 METHOD:: peakColor
 METHOD:: clipColor
 METHOD:: numChannels
@@ -128,4 +168,12 @@ m = PltMeter(8, 0, s, "eight channels", 560, 340).floorDb_(-72).front;
 m = PltMeter(4, 0, nil, "from anywhere").front;
 m.pushFrame([1.0, 0.5, 0.12, 0.01], [0.7, 0.35, 0.08, 0.004]);
 m.clipping;                           // true
+m.zoneOf(-20);                        // \safe
+m.zoneOf(-6);                         // \warn
+
+// one colour instead of three
+PltMeter(2, 0).zones_(false).front;
+
+// different thresholds, for quiet material
+PltMeter(2, 0).warnDb_(-24).clipDb_(-12).floorDb_(-72).front;
 ::

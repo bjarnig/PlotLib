@@ -1,12 +1,6 @@
 /*
-An Env drawn with its breakpoints, its curve shapes and its release node.
-
-	PltEnvelope(Env.perc(0.01, 0.4)).front;
-	PltEnvelope(Env.adsr(0.02, 0.2, 0.4, 0.5)).front;
-
-Env:plot already exists; this one is here for the same reason the rest of the
-library is: axes in seconds and amplitude, the breakpoints marked, and the
-release node shown, so a sustaining envelope reads differently from a fixed one.
+An Env with its breakpoints, curve shapes and release node, in seconds and level,
+so a sustaining envelope reads differently from a fixed one.
 */
 PltEnvelope : PltView {
 	var <env, <times, <values;
@@ -17,14 +11,8 @@ PltEnvelope : PltView {
 		^super.new(title, width, height).initPltEnvelope(env)
 	}
 
-	/*
-	The curve as plain data: [times, values], sampled evenly so any curve type is
-	drawn as the shape it actually is rather than as straight segments.
-
-	The breakpoint times are added to the even samples, because a corner that
-	falls between two samples is cut off: sampling Env.adsr 50 times returned a
-	peak of 0.965 for an envelope that reaches 1.
-	*/
+	// [times, values]. Breakpoint times join the even samples because a corner
+	// between two of them is cut off: Env.adsr came back peaking at 0.965.
 	*points { |env, columns = 400|
 		var dur = env.duration;
 		var ts, vs, bp, t = 0;

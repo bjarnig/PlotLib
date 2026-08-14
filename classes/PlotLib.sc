@@ -1,7 +1,6 @@
 /*
-PlotLib: namespace, palette and the pure helpers every view shares.
-
-Nothing here touches a GUI, so all of it can be tested headless.
+Palette, themes, fonts and the pure helpers every view shares. No GUI in here, so
+all of it can be tested headless.
 */
 PlotLib {
 	classvar themes, palette, currentTheme;
@@ -12,16 +11,8 @@ PlotLib {
 
 	*initClass { views = IdentitySet.new }
 
-	/*
-	The themes. Each is a full palette; ground says which way round it is, and
-	alphaFor and lineWidth below use that.
-
-	A palette is not invertible. On a dark ground an alpha blend darkens and
-	reads as more weight, on white it lightens and washes out, and a 1px
-	anti-aliased line that reads on dark nearly disappears on white. So the
-	light theme gets its own solid colours, and the two helpers compensate for
-	the rest.
-	*/
+	// A palette is not invertible: alpha and hairlines read differently on each
+	// ground, which the light palette and alphaFor/lineWidth below compensate for.
 	*themes {
 		themes ?? {
 			themes = (
@@ -176,9 +167,8 @@ PlotLib {
 		^out
 	}
 
-	// Compact fixed-point string, precision chosen from the range it belongs to.
-	// A whole number prints without a decimal: an axis of counts reading "30.0",
-	// or a frequency axis reading "5000.0", is noise.
+	// Compact axis label, precision from the span it belongs to. A whole number
+	// loses its decimal: an axis reading "30.0" or "5000.0" is noise.
 	*fmt { |value, span = 1|
 		var q = case
 			{ span >= 100 } { 1 }

@@ -1,10 +1,6 @@
 /*
-Histogram of a collection of values.
-
-	PltHistogram(({ 1.0.linrand } ! 4000), 0, 1, 40, "Pwhite").front;
-
-*counts is the whole computation, so a distribution can be checked without a
-window.
+Histogram of a collection. A non-empty bin is drawn at least one pixel tall, so
+rare values stay visible.
 */
 PltHistogram : PltView {
 	var <counts, <lo, <hi, <bins;

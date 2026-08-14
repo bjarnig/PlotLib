@@ -1,6 +1,6 @@
 # PlotLib
 
-Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, a live event scatter, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks and mapping curves.
+Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, event scatters, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks and mapping curves.
 
 ![bifurcation diagram of the logistic map](images/bifurcation.png)
 
@@ -31,56 +31,51 @@ q = p.watch(Pbind(\dur, Pwhite(0.08, 0.3), \freq, Pwhite(200, 900))).play;
 // what the output bus is doing
 PltMeter(2, 0).front;
 PltSpectrum(0).front;
+PltTrack.analysis(0).front;
 
 // recorded sound
 PltWave.fromSoundFile(path).front;
 PltSpectrogram.fromSoundFile(path).logFreq_(true).front;
 PltVector.live(0).front;
 PltEnvelope(Env.perc(0.01, 0.4)).front;
+
+// what a control does to a value
+PltMap(\freq.asSpec).add(ControlSpec(20, 20000, \lin), "lin").marker_(0.25).front;
 ```
 
-`PltScatter` and `PltView` are below, and `PlotLib` holds the palette and the
-pure helpers. Reference under **PlotLib**, with more in
-[`examples/`](examples). 
-
-### Events
-
-![live event scatter with a frequency histogram](images/events.png)
+Reference in the help browser under **PlotLib**, more in [`examples/`](examples).
 
 ### Recorded sound
 
-`PltWave` draws min and max per pixel column, so a whole file stays legible and no peak is lost. `Signal.plot` draws every sample, which is right for 512 and unusable for five million.
+`PltWave` draws min and max per pixel column, so a whole file stays legible and no peak is lost. `PltSpectrogram` keeps the history `FreqScope` throws away, one `Image` column per frame.
 
 ![waveform of a soundfile](images/wave-file.png)
 
-`PltSpectrogram` keeps the history that `FreqScope` throws away. Each frame writes one column into an `Image` which is then blitted, so the cost per frame is a column rather than a full redraw.
-
 ![spectrogram on a logarithmic frequency axis](images/spectrogram-log.png)
 
-`PltVector` is a vectorscope: identical channels draw a vertical line, inverted ones a horizontal line, unrelated ones a cloud, with the correlation as a number. `PltEnvelope` draws an `Env` with its breakpoints, curve shapes and release node.
+`PltVector` is a vectorscope, `PltEnvelope` draws an `Env` as the shape it is.
 
 <p>
-<img src="images/vector-wide.png" alt="vectorscope" height="300">
-<img src="images/envelope-curves.png" alt="envelope with mixed curve types" height="300">
+<img src="images/vector-wide.png" alt="vectorscope" height="290">
+<img src="images/envelope-curves.png" alt="envelope with mixed curve types" height="290">
 </p>
 
-### Analysis and mapping
+### Live
 
-`PltTrack` puts descriptors on one clock with onsets as ticks through every panel; `PltTrack.analysis(0)` gives loudness, spectral centroid and flatness from a bus with nothing else to install. `PltMap` answers the question a synthesis class asks constantly: the slider moved a quarter of the way, so what happened? At 0.25, `\freq` gives 112 Hz where the linear equivalent gives 5015.
+`PltMeter` fills its bar in three zones, green below −12 dB, yellow to −3, red above, the peak line taking its zone's colour. `PltTrack` puts descriptors on one clock with onsets as ticks.
+
+<p>
+<img src="images/meter.png" alt="four channel meter showing all three zones" height="270">
+<img src="images/meter-live.png" alt="stereo level meter" height="270">
+</p>
 
 ![descriptors over time with onset ticks](images/track-analysis.png)
 
+### Mapping
+
+At a control value of 0.25, `\freq` gives 112 Hz where the linear equivalent gives 5015.
+
 ![the same range mapped three ways](images/map-warps.png)
-
-### Meter and spectrum
-
-<p>
-<img src="images/meter-live.png" alt="two channel level meter" height="300">
-</p>
-
-![spectrum analyser on a logarithmic frequency axis](images/spectrum-live-log.png)
-
-`PltMeter` points at a bus, has a settable dB scale and update rate, holds peaks separately from the peak line, exposes `peaks` / `rmss` / `clipping` to code, and can be driven from the language with `pushFrame`. Both recover after cmd-period. See the help file for the full comparison.
 
 ## Themes
 
@@ -97,22 +92,20 @@ PlotLib.theme_(\light);
 
 ## Notes
 
-Computing is separate from drawing: the maths is a class method returning plain data, so `PltBifurcation.points(...)` needs no window and can be tested headless. The live views take frames through `pushFrame`, so they can be driven from anything, not only from the server, and they re-register through `ServerTree` so cmd-period does not leave a frozen display behind.
-
-Every plot has `alwaysOnTop`, `position_`, `writeImage`, and closes on escape.
+Computing is separate from drawing: the maths is a class method returning plain data, so `PltBifurcation.points(...)` needs no window and is testable headless. The live views take frames through `pushFrame`, so anything can drive them, and they re-register through `ServerTree` so cmd-period leaves no frozen display. Every plot has `alwaysOnTop`, `position_`, `writeImage`, and closes on escape.
 
 ```
 sclang tests/test-compute.scd     # maps, distributions, ticks, FFT unpacking
-sclang tests/test-events.scd      # the event plotter, including pitch resolution
-sclang tests/test-live.scd        # meter and spectrum against known signals
-sclang tests/check-docs.scd       # every documented example compiles
+sclang tests/test-events.scd      # event plotter, meter zones, window handling
+sclang tests/test-live.scd        # meter, spectrum and analysis against known signals
+sclang tests/check-docs.scd       # every help page parses and every example compiles
 sclang tests/render-shots.scd     # regenerate these images
 ```
 
-Run `test-live.scd` on its own: it takes the default server and the audio device, so a second sclang instance running at the same time makes it fail as though the views were broken.
+Run `test-live.scd` on its own: it takes the default server and the audio device, so a second sclang instance makes it fail as though the views were broken.
 
 ## Acknowledgements
 
-The waveform family was prompted by looking through the examples of Marinos Koutsomichalis, *Mapping and Visualization with SuperCollider* (Packt, 2013), in particular its approach of building a spectrogram by writing pixels into an `Image`. No code from it is used here.
+The waveform family was prompted by the examples of Marinos Koutsomichalis, *Mapping and Visualization with SuperCollider* (Packt, 2013), in particular its approach of building a spectrogram by writing pixels into an `Image`. No code from it is used here.
 
 GPL-3.0.

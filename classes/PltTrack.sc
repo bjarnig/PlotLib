@@ -1,19 +1,7 @@
 /*
-Descriptors over time, as stacked small multiples with a shared time axis and
-onsets marked as ticks.
-
-	t = PltTrack.analysis(0).front;      // loudness, centroid, flatness, onsets
-	t.close;
-
-	// or drive it yourself
-	t = PltTrack([(name: "cutoff", lo: 100, hi: 8000), (name: "q")]).front;
-	t.push([2000, 0.3]);
-
-This is the analysis-to-mapping chain made visible: what a descriptor actually
-does while a sound plays, next to the others, on one clock.
-
-A track with no lo and hi autoscales over what is currently visible, which is
-usually right for a descriptor whose range nobody remembers.
+Descriptors over time as stacked small multiples, sharing one clock, with onsets as
+ticks through every panel. PltTrack.analysis reads a bus; push feeds it from
+anywhere. A track given no lo and hi autoscales over what is visible.
 */
 PltTrack : PltView {
 	// one Event per track: (name:, lo:, hi:, unit:, colorKey:, points: List of [time, value])
@@ -26,20 +14,13 @@ PltTrack : PltView {
 
 	classvar nextId = 0;
 
-	/*
-	specs is an Array of Events describing the tracks:
-		(name: "loudness", lo: 0, hi: 64, unit: "sones", colorKey: \ink)
-	lo and hi may be left out, in which case the track autoscales.
-	*/
+	// specs: Events like (name: "loudness", lo: 0, hi: 64, unit: "sones").
+	// Without lo and hi, a track autoscales over what is visible.
 	*new { |specs, span = 10, title = "tracks", width = 900, height = 460|
 		^super.new(title, width, height).initPltTrack(specs, span)
 	}
 
-	/*
-	The built in analysis: loudness, spectral centroid, spectral flatness and
-	onsets, from one bus. All four come from the core UGens, so nothing extra has
-	to be installed.
-	*/
+	// Loudness, spectral centroid, flatness and onsets, all from core UGens.
 	*analysis { |bus = 0, server, span = 10, title = "analysis",
 		width = 900, height = 520|
 		^this.new([
@@ -93,13 +74,8 @@ PltTrack : PltView {
 		synth = {
 			var in = In.ar(bus, 1);
 			var descriptors = FFT(LocalBuf(fftSize), in);
-			/*
-			Onsets gets a chain of its own. Sharing one with Loudness,
-			SpecCentroid and SpecFlatness makes it stop triggering altogether:
-			no error, no warning, simply no onsets ever, while the other three
-			keep reporting correctly. Measured: 0 detections on a shared chain
-			against 11 of 12 events on its own.
-			*/
+			// Onsets needs its own chain: sharing one with the other three stops it
+			// triggering at all, silently. 0 detections shared, 11 of 12 alone.
 			var detector = FFT(LocalBuf(512), in);
 			SendReply.kr(Impulse.kr(rate), '/plt_track', [
 				Loudness.kr(descriptors),

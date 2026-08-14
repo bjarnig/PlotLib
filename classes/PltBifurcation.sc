@@ -1,11 +1,6 @@
 /*
-Bifurcation diagram of a one dimensional map: sweep the parameter along x and
-plot the attractor vertically.
-
-	PltBifurcation({ |x, r| r * x * (1 - x) }, 2.4, 4.0).marker_(3.82).front;
-
-mapFunc takes the current value and the swept parameter, and returns the next
-value. *points is the whole computation and needs no window.
+Bifurcation diagram of a one dimensional map: sweep the parameter along x and plot
+the attractor vertically. mapFunc takes (x, parameter) and returns the next x.
 */
 PltBifurcation : PltScatter {
 	var <mapFunc, <paramLo, <paramHi, <x0;
@@ -18,11 +13,8 @@ PltBifurcation : PltScatter {
 			.prSetMap(mapFunc, paramLo, paramHi, x0)
 	}
 
-	/*
-	Returns [params, values] as two FloatArrays, one entry per plotted point.
-	Each column runs the orbit from x0, discards `transient` iterations so only
-	the attractor is left, then records `keep`.
-	*/
+	// [params, values] as two FloatArrays. Each column runs from x0, discards
+	// transient iterations so only the attractor is left, then records keep.
 	*points { |mapFunc, paramLo = 2.4, paramHi = 4.0, x0 = 0.5,
 		columns = 460, transient = 200, keep = 90|
 		var params = FloatArray.new(columns * keep);

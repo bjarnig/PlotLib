@@ -1,14 +1,7 @@
 /*
-Live event scatter: a scrolling window of the last few seconds, one dot per
-event, log frequency up the axis and amplitude as radius, over a histogram of
-the frequencies currently visible.
-
-	p = PltEvents("Pwhite", 8, 150, 1200).front;
-	q = p.watch(Pbind(\dur, Pwhite(0.08, 0.3), \freq, Pwhite(200, 900))).play;
-	q.stop; p.close;
-
-Feed it from anywhere with push(freq, amp); watch wraps a pattern so every
-event that plays is also plotted.
+Live event scatter: the last few seconds, one dot per event, log frequency up the
+axis and amplitude as radius, over a histogram of what is visible. Feed it with
+push, or wrap a pattern with watch.
 */
 PltEvents : PltView {
 	var <events, <>span, <>freqLo, <>freqHi, <>bins, <>maxEvents = 4000;
@@ -53,15 +46,8 @@ PltEvents : PltView {
 		}
 	}
 
-	/*
-	One numeric value out of an event.
-
-	A pattern that sets \degree or \midinote carries no \freq of its own, and
-	asking an Event for a key it lacks hands back the *unevaluated function* its
-	parent holds: not nil, not a number, so testing for nil finds nothing wrong
-	and every event plots at the fallback. Compose with the default parent and
-	evaluate inside it, which is what playing an event does.
-	*/
+	// An Event asked for a key it lacks returns its parent's *unevaluated
+	// function*, not nil, so compose with the default parent and evaluate inside.
 	prValueOf { |ev, key, fallback|
 		var v = ev.at(key), composed;
 		if(v.isNumber.not) {

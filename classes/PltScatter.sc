@@ -1,8 +1,6 @@
 /*
-Scatter of xs against ys. The base for the bifurcation diagram and the phase
-portrait, since both are a great many small points in a box.
-
-	PltScatter(({ |i| i / 100 } ! 300), ({ |i| (i / 100).sin } ! 300)).front;
+Scatter of xs against ys, and the base for the bifurcation diagram and the phase
+portrait. All the points go into one Pen.fill: filling per point is far slower.
 */
 PltScatter : PltView {
 	var <xs, <ys;
@@ -50,12 +48,8 @@ PltScatter : PltView {
 
 	dataBounds { ^bounds }
 
-	/*
-	With equalAspect the two axes get the same units per pixel, by widening the
-	tighter range around its centre. An attractor is a shape, and Henon drawn
-	with x spanning 2.6 and y spanning 0.4 in a square window is a shape that
-	does not exist.
-	*/
+	// Same units per pixel on both axes, by widening the tighter range. Henon with
+	// x spanning 2.6 and y 0.4 in a square window is a shape that does not exist.
 	adjustBounds { |b, r|
 		var xSpan = b[1] - b[0], ySpan = b[3] - b[2], want, centre;
 		if(equalAspect.not) { ^b };

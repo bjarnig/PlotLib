@@ -78,10 +78,14 @@ Routine({
 	};
 	shot.value("events", ev);
 
-	// meter: fed from the language, no server needed
+	// meter: fed from the language, no server needed. Levels chosen to land one
+	// channel in each zone, with the first clipping.
 	meter = PltMeter(4, 0, nil, "meter: four channels");
-	meter.pushFrame([1.0, 0.5, 0.12, 0.01], [0.7, 0.35, 0.08, 0.004]);
+	meter.pushFrame([1.0, 0.55, 0.2, 0.03], [0.8, 0.4, 0.12, 0.01]);
 	shot.value("meter", meter);
+	meter = PltMeter(4, 0, nil, "zones off").zones_(false);
+	meter.pushFrame([1.0, 0.55, 0.2, 0.03], [0.8, 0.4, 0.12, 0.01]);
+	shot.value("meter-nozones", meter);
 
 	// spectrum: a synthetic frame of a harmonic series with a formant peak
 	spec = PltSpectrum(0, 1024, nil, "spectrum: synthetic frame");

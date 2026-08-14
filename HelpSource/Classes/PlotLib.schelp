@@ -39,11 +39,8 @@ its alphas and hairlines through them.
 CLASSMETHODS::
 
 METHOD:: theme
-The name of the current theme.
-
-METHOD:: theme_
-Switch theme, rethemeing every open view. An unknown name warns and changes
-nothing.
+The name of the current theme, and the setter that switches it. Switching
+rethemes every open view; an unknown name warns and changes nothing.
 argument:: name
 code::\darkBlue::, code::\dark::, code::\light::, or one added with
 strong::addTheme::.
