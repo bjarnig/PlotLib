@@ -1,6 +1,6 @@
 # PlotLib
 
-Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, event scatters, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks and mapping curves.
+Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, event scatters, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks, mapping curves, filter responses and Markov chains.
 
 ![bifurcation diagram of the logistic map](images/bifurcation.png)
 
@@ -41,6 +41,11 @@ PltEnvelope(Env.perc(0.01, 0.4)).front;
 
 // what a control does to a value
 PltMap(\freq.asSpec).add(ControlSpec(20, 20000, \lin), "lin").marker_(0.25).front;
+
+// a filter response, a density and a chain
+PltFilter([0.5, 0.5, 0, 0, 0], "two point averager").front;
+PltDistribution({ exprand(0.01, 1.0) } ! 20000, 0.01, 1, 40, \logUniform).front;
+PltMarkov([[0.9, 0.1], [0.5, 0.5]], ["a", "b"]).front;
 ```
 
 Reference in the help browser under **PlotLib**, more in [`examples/`](examples).
@@ -71,11 +76,25 @@ Reference in the help browser under **PlotLib**, more in [`examples/`](examples)
 
 ![descriptors over time with onset ticks](images/track-analysis.png)
 
-### Mapping
+### Mapping and filters
 
 At a control value of 0.25, `\freq` gives 112 Hz where the linear equivalent gives 5015.
 
 ![the same range mapped three ways](images/map-warps.png)
+
+`PltFilter` takes SOS coefficients, an impulse response, or a UGen graph measured on the server.
+
+![lowpass at three resonances, magnitude and phase](images/filter-lowpass.png)
+
+### Probability
+
+`PltDistribution` draws the density over the samples and says how far off they are. `exprand` sits on 1/x to within 0.3% and is nothing like exponential. `PltMarkov` shows a transition matrix with its stationary distribution and per-state entropy.
+
+<p>
+<img src="images/distribution-exprand.png" alt="exprand against a 1/x density" height="240">
+</p>
+
+![a four state chain](images/markov-four.png)
 
 ## Themes
 

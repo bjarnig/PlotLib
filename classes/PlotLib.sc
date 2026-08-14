@@ -182,6 +182,21 @@ PlotLib {
 		^rounded.asString
 	}
 
+	// The frequencies a listener thinks in, for a log axis. Shared by every view
+	// that has one, so their labels and grids agree.
+	*freqTicks { |minHz = 20, maxHz = 20000|
+		^[20, 30, 50, 100, 200, 300, 500, 1000, 2000, 3000, 5000, 10000, 20000]
+			.select { |f| (f >= minHz) and: { f <= maxHz } }
+	}
+
+	// A frequency as an axis label: 5000 reads as 5k.
+	*freqLabel { |hz|
+		var rounded = hz.round(1).asInteger;
+		^if(rounded >= 1000) { (rounded / 1000).asInteger.asString ++ "k" } {
+			rounded.asString
+		}
+	}
+
 	// Amplitude to dB with a floor, so silence maps to the bottom of a meter
 	// instead of -inf.
 	*ampDb { |amp, floor = -72| ^amp.abs.max(0).ampdb.max(floor) }
@@ -191,6 +206,6 @@ PlotLib {
 		^[PltView, PltScatter, PltHistogram, PltBifurcation, PltPhase,
 			PltEvents, PltMeter, PltSpectrum,
 			PltWave, PltEnvelope, PltSpectrogram, PltVector,
-			PltTrack, PltMap]
+			PltTrack, PltMap, PltFilter, PltDistribution, PltMarkov]
 	}
 }

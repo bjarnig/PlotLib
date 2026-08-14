@@ -1,0 +1,98 @@
+TITLE:: PltMarkov
+summary:: A transition matrix as a heat map, with its stationary distribution
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltDistribution
+
+DESCRIPTION::
+Rows are the state moved from, columns the state moved to. Probability is
+brightness, the stationary distribution runs under the columns, and each row's
+entropy in bits sits beside it.
+
+A matrix is unreadable as numbers and obvious as a picture: where a chain gets
+stuck, which states are dead ends, and how much freedom each one has.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: matrix
+Rows of weights, normalised on the way in, so counts work as well as probabilities.
+argument:: labels
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: fromSequence
+Counted from a sequence of symbols: what a generated passage actually did, rather
+than what its rules said.
+argument:: symbols
+argument:: states
+Fixes the order of the axes. Left out, the symbols in order of first appearance.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: count
+Transition counts from a sequence, normalised.
+
+METHOD:: statesOf
+The distinct symbols, in order of first appearance.
+
+METHOD:: normalise
+Rows summed to 1. A row of zeros is left alone: it is a dead end, and spreading it
+into a uniform row would invent transitions that never happened.
+
+METHOD:: stationary
+Where the chain spends its time in the long run, by power iteration from a uniform
+start.
+code::
+PltMarkov.stationary([[0.9, 0.1], [0.5, 0.5]]);   // [0.8333, 0.1667]
+::
+
+METHOD:: entropy
+Each row in bits: 0 when the next state is certain, code::log2(n):: when it is a
+free choice.
+code::
+PltMarkov.entropy([[1, 0], [0.5, 0.5]]);          // [0, 1]
+::
+
+INSTANCEMETHODS::
+
+METHOD:: matrix
+METHOD:: labels
+METHOD:: stationary
+METHOD:: entropies
+METHOD:: showValues
+Print the probability in each cell, when the cells are wide enough.
+METHOD:: gamma
+Brightness curve of the heat map.
+METHOD:: stripHeight
+Height of the stationary bars.
+
+EXAMPLES::
+code::
+// a drum chain: snare usually follows kick, rest returns to kick
+(
+PltMarkov([
+	[0.1, 0.7, 0.2, 0.0],
+	[0.3, 0.1, 0.4, 0.2],
+	[0.0, 0.2, 0.5, 0.3],
+	[0.6, 0.0, 0.0, 0.4]
+], ["kick", "snare", "hat", "rest"], "four state chain").front;
+)
+
+// counted from a sequence
+(
+PltMarkov.fromSequence(
+	[\a, \b, \c, \b, \a, \c, \c, \b, \a, \a, \b, \c, \a, \b, \b, \c, \a]
+).front;
+)
+
+// what a pattern actually produced, as opposed to what it was told to do
+(
+~played = Pseq([0, 2, 4, 7, 4, 2], 4).asStream.all;
+PltMarkov.fromSequence(~played, nil, "degrees played").front;
+)
+
+// data only
+PltMarkov.normalise([[9, 1], [5, 5]]);
+::

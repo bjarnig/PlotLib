@@ -279,16 +279,12 @@ PltSpectrogram : PltView {
 
 	yTickValues { |b|
 		if(logFreq.not) { ^super.yTickValues(b) };
-		^[50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
-			.select { |f| f >= minHz and: { f <= maxHz } }
-			.collect(_.log10)
+		^PlotLib.freqTicks(minHz, maxHz).collect(_.log10)
 	}
 
 	yTickLabel { |value, b|
-		var hz;
 		if(logFreq.not) { ^super.yTickLabel(value, b) };
-		hz = (10 ** value).round(1).asInteger;
-		^if(hz >= 1000) { (hz / 1000).asInteger.asString ++ "k" } { hz.asString }
+		^PlotLib.freqLabel(10 ** value)
 	}
 
 	caption {

@@ -190,6 +190,45 @@ Routine({
 		shot.value("track-analysis", t);
 	}.value;
 
+	// filters, densities and chains
+	{
+		var f, d, mk, rbj;
+		rbj = { |freq, q|
+			var w0 = 2pi * freq / 48000;
+			var alpha = sin(w0) / (2 * q);
+			var b0 = (1 - cos(w0)) / 2, b1 = 1 - cos(w0);
+			var a0 = 1 + alpha, a1 = -2 * cos(w0), a2 = 1 - alpha;
+			// SC's SOS carries the sign in the recursive terms, so negate them
+			[b0 / a0, b1 / a0, b0 / a0, a1.neg / a0, a2.neg / a0]
+		};
+		f = PltFilter(rbj.value(800, 0.707), "Q 0.707", 48000, "lowpass at 800 Hz");
+		f.add(rbj.value(800, 2), "Q 2");
+		f.add(rbj.value(800, 8), "Q 8");
+		shot.value("filter-lowpass", f);
+
+		f = PltFilter([0.5, 0.5, 0, 0, 0], "averager", 48000, "two point filters");
+		f.add([1, -1, 0, 0, 0], "difference");
+		f.add([0, 1, 0, 0, 0], "one sample delay");
+		shot.value("filter-twopoint", f);
+
+		// the range is the generator's support: 0 would ask what 1/x does below 0.01
+		d = PltDistribution({ exprand(0.01, 1.0) } ! 20000, 0.01, 1, 40, \logUniform,
+			"exprand against 1/x");
+		shot.value("distribution-exprand", d);
+		d = PltDistribution({ ({ 1.0.rand } ! 3).sum / 3 } ! 20000, 0, 1, 40,
+			PltDistribution.density(\gauss, [0.5, 0.167]),
+			"mean of three uniforms against a gaussian");
+		shot.value("distribution-mean", d);
+
+		mk = PltMarkov([
+			[0.1, 0.7, 0.2, 0.0],
+			[0.3, 0.1, 0.4, 0.2],
+			[0.0, 0.2, 0.5, 0.3],
+			[0.6, 0.0, 0.0, 0.4]
+		], ["kick", "snare", "hat", "rest"], "four state chain");
+		shot.value("markov-four", mk);
+	}.value;
+
 	"done".postln;
 	0.exit;
 }).play(AppClock);

@@ -1,7 +1,7 @@
 TITLE:: PlotLib
 summary:: Plots for the things SuperCollider does not draw by itself
 categories:: Libraries>PlotLib
-related:: Classes/PltTrack, Classes/PltMap, Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum, Classes/PltWave, Classes/PltSpectrogram, Classes/PltVector, Classes/PltEnvelope
+related:: Classes/PltFilter, Classes/PltDistribution, Classes/PltMarkov, Classes/PltTrack, Classes/PltMap, Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum, Classes/PltWave, Classes/PltSpectrogram, Classes/PltVector, Classes/PltEnvelope
 
 DESCRIPTION::
 A set of link::Classes/UserView:: plots with one palette, one set of axes and one
@@ -46,6 +46,12 @@ node.
 ## link::Classes/PltTrack:: || descriptors over time as stacked small multiples,
 with onsets marked.
 ## link::Classes/PltMap:: || a mapping curve: what a control does to a value.
+## link::Classes/PltFilter:: || frequency response as a Bode plot, magnitude and
+phase.
+## link::Classes/PltDistribution:: || a histogram with the density it should have
+drawn over it.
+## link::Classes/PltMarkov:: || a transition matrix as a heat map, with its
+stationary distribution.
 ::
 
 SECTION:: How the classes are shaped
@@ -99,6 +105,11 @@ PltEnvelope(Env.perc(0.01, 0.4)).front;
 // analysis and mapping
 PltTrack.analysis(0).front;
 PltMap(\freq.asSpec).add(ControlSpec(20, 20000, \lin), "linear").marker_(0.25).front;
+
+// filters, densities and chains
+PltFilter([0.5, 0.5, 0, 0, 0], "averager").front;
+PltDistribution({ exprand(0.01, 1.0) } ! 20000, 0.01, 1, 40, \logUniform).front;
+PltMarkov([[0.9, 0.1], [0.5, 0.5]], ["a", "b"]).front;
 ::
 
 More in the strong::examples:: folder of the quark, and the tests in

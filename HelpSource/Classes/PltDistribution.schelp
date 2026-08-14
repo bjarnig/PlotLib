@@ -1,0 +1,103 @@
+TITLE:: PltDistribution
+summary:: A sampled histogram with the density it should have drawn over it
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltHistogram, Classes/Pwhite
+
+DESCRIPTION::
+A link::Classes/PltHistogram:: with the analytic density on top, so "this looks
+exponential" becomes "this is, or is not, exponential", with a number in the
+caption saying how far off it is.
+
+The density may be any Function of x and need not be normalised: it is normalised
+numerically over the plotted range, which is why a Beta shape works here without a
+Gamma function anywhere.
+
+note::
+code::\logUniform:: is SuperCollider's code::exprand::, whose density falls as
+code::1/x::. It is strong::not:: the exponential distribution, whatever the name
+suggests, and this is the clearest place to see it: exprand sits on 1/x to within
+0.3% and misses a flat density by an order of magnitude more.
+::
+
+note::
+The plotted range must be the distribution's own support. Plotting
+code::exprand(0.01, 1):: over code::[0, 1]:: asks what the density does below 0.01,
+where no sample can land, and the end bins report nonsense.
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: values
+argument:: lo
+argument:: hi
+argument:: bins
+argument:: pdf
+A Symbol naming a density, or a Function of x.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: density
+A named density as an unnormalised Function: code::\uniform::,
+code::\logUniform::, code::\exponential:: (lambda), code::\gauss:: (mean, dev),
+code::\beta:: (a, b), code::\triangular::.
+code::
+PltDistribution.density(\gauss, [0.5, 0.1]);
+::
+
+METHOD:: expectedCounts
+Expected counts per bin, normalised to the sample total.
+argument:: pdfFunc
+argument:: lo
+argument:: hi
+argument:: bins
+argument:: total
+argument:: subSamples
+How many points the density is averaged over per bin. A centre sample, which is
+code::subSamples: 1::, is wrong wherever the density is steep and hopeless where it
+is singular: 1/x over a bin touching zero read 7000 against 3950 actually drawn.
+
+METHOD:: deviation
+The largest difference between counts and expectation, as a proportion of the
+total. 0 is a perfect match; a few percent is visible in the picture.
+
+INSTANCEMETHODS::
+
+METHOD:: pdf
+The density, as a Symbol or a Function.
+METHOD:: expected
+Expected counts per bin.
+METHOD:: deviation
+How far the samples sit from the density.
+METHOD:: showExpected
+METHOD:: pdfColorKey
+
+EXAMPLES::
+code::
+// exprand is 1/x, not exponential
+PltDistribution({ exprand(0.01, 1.0) } ! 20000, 0.01, 1, 40, \logUniform).front;
+
+// and it is nothing like flat
+PltDistribution({ exprand(0.01, 1.0) } ! 20000, 0.01, 1, 40, \uniform).front;
+
+// rand is flat
+PltDistribution({ 1.0.rand } ! 20000, 0, 1, 40, \uniform).front;
+
+// the mean of three uniforms is nearly gaussian, with a third of the spread
+(
+PltDistribution({ ({ 1.0.rand } ! 3).sum / 3 } ! 20000, 0, 1, 40,
+	PltDistribution.density(\gauss, [0.5, 0.167]), "mean of three").front;
+)
+
+// any function, unnormalised
+PltDistribution({ 1.0.rand.squared } ! 20000, 0, 1, 40, { |x| 1 / x.sqrt }).front;
+
+// data only
+(
+var counts = PlotLib.histogram({ exprand(0.01, 1.0) } ! 5000, 0.01, 1, 20);
+var expected = PltDistribution.expectedCounts(
+	PltDistribution.density(\logUniform), 0.01, 1, 20, 5000);
+PltDistribution.deviation(counts, expected);
+)
+::

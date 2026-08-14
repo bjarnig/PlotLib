@@ -23,6 +23,114 @@ ok = { |name, cond|
 };
 near = { |a, b, tol = 1e-9| (a - b).abs <= tol };
 
+"--- PltFilter: responses with known answers ---".postln;
+ok.value("a passthrough is 0 dB and 0 phase everywhere", {
+	var r = PltFilter.biquadResponse([1, 0, 0, 0, 0], [1, 1000, 12000, 23999], 48000);
+	r[0].every { |m| near.value(m, 1) } and: { r[1].every { |p| near.value(p, 0) } }
+}.value);
+ok.value("a one sample delay is flat, and -pi at nyquist", {
+	var r = PltFilter.biquadResponse([0, 1, 0, 0, 0], [1, 1000, 23999.99], 48000);
+	r[0].every { |m| near.value(m, 1) } and: { near.value(r[1].last, pi.neg, 1e-4) }
+}.value);
+ok.value("a two point averager is 1, 1/sqrt(2) and 0", {
+	var r = PltFilter.biquadResponse([0.5, 0.5, 0, 0, 0], [0.0001, 12000, 23999.999], 48000);
+	near.value(r[0][0], 1, 1e-6) and: { near.value(r[0][1], 1 / sqrt(2), 1e-4) }
+		and: { near.value(r[0][2], 0, 1e-4) }
+}.value);
+ok.value("a difference filter is a null at dc", {
+	near.value(PltFilter.biquadResponse([1, -1, 0, 0, 0], [0.0001], 48000)[0][0], 0, 1e-6)
+}.value);
+// two independent paths to the same answer: the transfer function evaluated
+// directly, and a DFT of the impulse response the same coefficients produce
+ok.value("the impulse response path agrees with the coefficients", {
+	var c = [0.2, 0.1, 0, 0.5, -0.1];
+	var ir = { var x1 = 0, x2 = 0, y1 = 0, y2 = 0;
+		Array.fill(2048, { |i|
+			var x = if(i == 0) { 1 } { 0 };
+			var y = (c[0] * x) + (c[1] * x1) + (c[2] * x2) + (c[3] * y1) + (c[4] * y2);
+			x2 = x1; x1 = x; y2 = y1; y1 = y;
+			y
+		})
+	}.value;
+	var probe = [500, 2000, 8000];
+	var direct = PltFilter.biquadResponse(c, probe, 48000)[0];
+	var measured = PltFilter.impulseResponse(ir, probe, 48000)[0];
+	3.collect { |i| near.value(direct[i], measured[i], 1e-4) }.every { |b| b }
+}.value);
+ok.value("log spaced frequencies span the range", {
+	var f = PltFilter.logFreqs(20, 20000, 100);
+	near.value(f.first, 20, 1e-9) and: { near.value(f.last, 20000, 1e-6) }
+		and: { f == f.sort }
+}.value);
+
+"--- PltDistribution ---".postln;
+ok.value("expected counts sum to the sample total", {
+	var e = PltDistribution.expectedCounts(PltDistribution.density(\uniform), 0, 1, 10, 1000);
+	near.value(e.sum, 1000, 1e-6) and: { e.every { |v| near.value(v, 100, 1e-6) } }
+}.value);
+/*
+The density is averaged across each bin rather than read at its centre: a centre
+sample put 7000 where 3950 samples had actually landed. subSamples of 1 is exactly
+the centre sample, so the two methods can be compared directly. 1/x is convex, so
+its mean over a bin is greater than its value at the middle.
+*/
+ok.value("a steep density is integrated across the bin, not sampled at its centre", {
+	var density = PltDistribution.density(\logUniform);
+	var centre = PltDistribution.expectedCounts(density, 0.01, 1, 8, 1000, 1);
+	var integrated = PltDistribution.expectedCounts(density, 0.01, 1, 8, 1000, 16);
+	(integrated.first > centre.first)
+		and: { integrated == integrated.reverse.sort.reverse }
+}.value);
+ok.value("deviation is 0 for a match and 1 for the opposite", {
+	near.value(PltDistribution.deviation([10, 20, 30], [10, 20, 30]), 0)
+		and: { near.value(PltDistribution.deviation([60, 0, 0], [0, 0, 60]), 1, 1e-9) }
+}.value);
+// exprand is log-uniform, not exponential, whatever the name suggests
+ok.value("exprand matches a 1/x density and not a flat one", {
+	var values = { exprand(0.01, 1.0) } ! 20000;
+	var counts = PlotLib.histogram(values, 0.01, 1, 40);
+	var logU = PltDistribution.expectedCounts(
+		PltDistribution.density(\logUniform), 0.01, 1, 40, 20000);
+	var flat = PltDistribution.expectedCounts(
+		PltDistribution.density(\uniform), 0.01, 1, 40, 20000);
+	(PltDistribution.deviation(counts, logU) < 0.02)
+		and: { PltDistribution.deviation(counts, flat) > 0.05 }
+}.value);
+ok.value("rand matches a flat density", {
+	var counts = PlotLib.histogram({ 1.0.rand } ! 20000, 0, 1, 40);
+	PltDistribution.deviation(counts,
+		PltDistribution.expectedCounts(PltDistribution.density(\uniform),
+			0, 1, 40, 20000)) < 0.01
+}.value);
+ok.value("an unknown density name warns and falls back to flat", {
+	PltDistribution.density(\nosuchdensity).value(0.5) == 1
+}.value);
+
+"--- PltMarkov ---".postln;
+ok.value("rows are normalised to 1", {
+	PltMarkov.normalise([[9, 1], [5, 5]]) == [[0.9, 0.1], [0.5, 0.5]]
+}.value);
+// a dead end row is left at zero: spreading it would invent transitions
+ok.value("a row of zeros stays zero", PltMarkov.normalise([[1, 1], [0, 0]])[1] == [0, 0]);
+ok.value("the stationary distribution of a known chain is 5/6 and 1/6", {
+	var p = PltMarkov.stationary([[0.9, 0.1], [0.5, 0.5]]);
+	near.value(p[0], 5/6, 1e-6) and: { near.value(p[1], 1/6, 1e-6) }
+}.value);
+ok.value("a doubly stochastic chain is uniform", {
+	PltMarkov.stationary([[0.5, 0.5], [0.5, 0.5]]).every { |v| near.value(v, 0.5, 1e-9) }
+}.value);
+ok.value("entropy is 0 bits when deterministic and 1 when a coin toss", {
+	var e = PltMarkov.entropy([[1, 0], [0.5, 0.5]]);
+	near.value(e[0], 0, 1e-9) and: { near.value(e[1], 1, 1e-9) }
+}.value);
+ok.value("transitions are counted from a sequence", {
+	var m = PltMarkov.count([\a, \a, \b, \a, \b], [\a, \b]);
+	near.value(m[0][0], 1/3, 1e-9) and: { near.value(m[0][1], 2/3, 1e-9) }
+		and: { near.value(m[1][0], 1, 1e-9) } and: { near.value(m[1][1], 0, 1e-9) }
+}.value);
+ok.value("states come back in order of first appearance",
+	PltMarkov.statesOf([\c, \a, \c, \b]) == [\c, \a, \b]);
+
 "--- PltMap.points ---".postln;
 // the endpoints and the exponential middle are exact, known answers
 ok.value("an exponential spec hits both ends and the geometric middle", {

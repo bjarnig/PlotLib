@@ -82,3 +82,74 @@ PltScatter((0 .. ~walk.size - 1), ~walk, "brownian walk").dotSize_(2).alpha_(0.7
 
 // and the distribution of where it spent its time
 PltHistogram(~walk, -1, 1, 40, "time spent").front;
+
+
+// ---- densities, chains and filters ----
+
+// What a generator actually produces, against the density it is supposed to have.
+// exprand is log-uniform: its density falls as 1/x. It is not exponential.
+PltDistribution({ exprand(0.01, 1.0) } ! 20000, 0.01, 1, 40, \logUniform).front;
+
+// The same samples against a flat density, which they are not
+PltDistribution({ exprand(0.01, 1.0) } ! 20000, 0.01, 1, 40, \uniform).front;
+
+// rand is flat, and the deviation in the caption says so
+PltDistribution({ 1.0.rand } ! 20000, 0, 1, 40, \uniform).front;
+
+// The mean of three uniforms is nearly gaussian with a third of the spread, which
+// is the trap in using it as a "random" value
+(
+PltDistribution({ ({ 1.0.rand } ! 3).sum / 3 } ! 20000, 0, 1, 40,
+	PltDistribution.density(\gauss, [0.5, 0.167]), "mean of three").front;
+)
+
+// Any function works as a density, unnormalised
+PltDistribution({ 1.0.rand.squared } ! 20000, 0, 1, 40, { |x| 1 / x.sqrt }).front;
+
+
+// A Markov chain as a picture: brightness is probability, the bars under the
+// columns are where the chain spends its time, the bits are how free each state is
+(
+~chain = [
+	[0.1, 0.7, 0.2, 0.0],
+	[0.3, 0.1, 0.4, 0.2],
+	[0.0, 0.2, 0.5, 0.3],
+	[0.6, 0.0, 0.0, 0.4]
+];
+PltMarkov(~chain, ["kick", "snare", "hat", "rest"], "four state chain").front;
+)
+
+// Counted from what a pattern actually played
+(
+~played = Pseq([0, 2, 4, 7, 4, 2], 6).asStream.all;
+PltMarkov.fromSequence(~played, nil, "degrees played").front;
+)
+
+
+// Filter responses. SC's SOS carries the sign in its recursive terms, so a
+// textbook biquad needs a1 and a2 negated.
+(
+~rbj = { |freq, q|
+	var w0 = 2pi * freq / 48000;
+	var alpha = sin(w0) / (2 * q);
+	var b0 = (1 - cos(w0)) / 2, b1 = 1 - cos(w0);
+	var a0 = 1 + alpha, a1 = -2 * cos(w0), a2 = 1 - alpha;
+	[b0 / a0, b1 / a0, b0 / a0, a1.neg / a0, a2.neg / a0]
+};
+~f = PltFilter(~rbj.value(800, 0.707), "Q 0.707", 48000, "lowpass at 800 Hz");
+~f.add(~rbj.value(800, 2), "Q 2");
+~f.add(~rbj.value(800, 8), "Q 8");
+~f.front;
+)
+
+// The textbook two point filters, which have no resonance at all
+(
+~f = PltFilter([0.5, 0.5, 0, 0, 0], "averager", 48000, "two point filters");
+~f.add([1, -1, 0, 0, 0], "difference");
+~f.add([0, 1, 0, 0, 0], "one sample delay");
+~f.front;
+)
+
+// Measured from a UGen graph, which needs the server
+s.boot;
+PltFilter.fromFunction({ |in| BPF.ar(in, 1000, 0.1) }, action: { |p| p.front });

@@ -140,16 +140,12 @@ PltSpectrum : PltView {
 	// 2.5. Label the frequencies a listener thinks in, and grid the same places.
 	xTickValues { |b|
 		if(logFreq.not) { ^super.xTickValues(b) };
-		^[20, 30, 50, 100, 200, 300, 500, 1000, 2000, 3000, 5000, 10000, 20000]
-			.select { |f| f >= minHz and: { f <= maxHz } }
-			.collect(_.log10)
+		^PlotLib.freqTicks(minHz, maxHz).collect(_.log10)
 	}
 
 	xTickLabel { |value, b|
-		var hz;
 		if(logFreq.not) { ^super.xTickLabel(value, b) };
-		hz = (10 ** value).round(1).asInteger;
-		^if(hz >= 1000) { (hz / 1000).asInteger.asString ++ "k" } { hz.asString }
+		^PlotLib.freqLabel(10 ** value)
 	}
 
 	caption {

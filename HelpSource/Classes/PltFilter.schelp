@@ -1,0 +1,106 @@
+TITLE:: PltFilter
+summary:: Frequency response as a Bode plot, magnitude and phase
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/SOS, Classes/PltSpectrum
+
+DESCRIPTION::
+Magnitude in dB and phase in degrees against log frequency. Several responses can
+be overlaid and compared, which is the point: a filter is easy to hear and hard to
+picture, and two settings of the same filter are hard to compare any other way.
+
+code::scopeResponse:: exists and is quicker for a glance. This one has axes, a
+phase panel, overlays, and needs no server when the coefficients are known.
+
+note::
+Coefficients are SuperCollider's link::Classes/SOS:: order, where
+code::out = a0*x + a1*x1 + a2*x2 + b1*y1 + b2*y2::, so the denominator is
+code::1 - b1 z^-1 - b2 z^-2:: with the sign already carried in the b terms. A
+biquad written for the usual textbook convention needs its recursive terms negated.
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: coeffs
+code::[a0, a1, a2, b1, b2]::
+argument:: label
+Shown in the legend. Made from the coefficients if left out.
+argument:: sampleRate
+argument:: title
+argument:: points
+argument:: width
+argument:: height
+
+METHOD:: fromImpulseResponse
+A response measured or rendered elsewhere.
+
+METHOD:: fromFunction
+A UGen graph, measured by sending an impulse through it on the server. The graph
+takes its input as the first argument. Answers through code::action::.
+code::
+PltFilter.fromFunction({ |in| RLPF.ar(in, 800, 0.2) }, action: { |p| p.front });
+::
+
+METHOD:: biquadResponse
+The response of one SOS section at the given frequencies: code::[magnitudes,
+phases]::, phases in radians. Evaluated on the unit circle, no server needed.
+
+METHOD:: impulseResponse
+The same from an impulse response: one DFT term per requested frequency, rather
+than an FFT and interpolation, because the points are log spaced and an FFT gives
+linear bins.
+
+METHOD:: logFreqs
+Log spaced frequencies, so a Bode plot has points where the eye needs them.
+
+INSTANCEMETHODS::
+
+METHOD:: add
+Overlay another response from coefficients.
+METHOD:: addImpulseResponse
+Overlay one from an impulse response.
+METHOD:: magnitudeAt
+The magnitude at one frequency, in dB.
+METHOD:: showPhase
+The phase panel, on by default.
+METHOD:: minHz
+METHOD:: maxHz
+Clamped to nyquist.
+METHOD:: floorDb
+METHOD:: ceilDb
+A resonant biquad peaks at about its Q, so leave headroom: 24 dB by default.
+METHOD:: curves
+METHOD:: freqs
+METHOD:: sampleRate
+METHOD:: panelGap
+METHOD:: showLabels
+
+EXAMPLES::
+code::
+// a two point averager, a difference filter and a delay
+(
+f = PltFilter([0.5, 0.5, 0, 0, 0], "averager", 48000, "two point filters");
+f.add([1, -1, 0, 0, 0], "difference");
+f.add([0, 1, 0, 0, 0], "one sample delay");
+f.front;
+)
+
+// the same cutoff at three resonances
+(
+~rbj = { |freq, q|
+	var w0 = 2pi * freq / 48000;
+	var alpha = sin(w0) / (2 * q);
+	var b0 = (1 - cos(w0)) / 2, b1 = 1 - cos(w0);
+	var a0 = 1 + alpha, a1 = -2 * cos(w0), a2 = 1 - alpha;
+	[b0 / a0, b1 / a0, b0 / a0, a1.neg / a0, a2.neg / a0]
+};
+f = PltFilter(~rbj.value(800, 0.707), "Q 0.707", 48000, "lowpass at 800 Hz");
+f.add(~rbj.value(800, 2), "Q 2");
+f.add(~rbj.value(800, 8), "Q 8");
+f.front;
+)
+
+// measured from a UGen graph
+s.boot;
+PltFilter.fromFunction({ |in| BPF.ar(in, 1000, 0.1) }, action: { |p| p.front });
+::
