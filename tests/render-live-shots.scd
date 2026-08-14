@@ -37,7 +37,7 @@ Routine({
 			PinkNoise.ar(0.16) * LFTri.kr(0.7).range(0.4, 1.0)
 		]
 	}.play;
-	shot.value("meter-live", PltMeter(2, 0, s, "output level", 300, 340), 2.0);
+	shot.value("meter-live", PltMeter(2, 0, s, "output level"), 2.0);
 
 	// a harmonic tone, where the linear axis lets the partials be counted
 	src.free;

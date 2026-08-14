@@ -68,7 +68,7 @@ PlotLib.theme_(\light);
 
 Computing is separate from drawing: the maths is a class method returning plain data, so `PltBifurcation.points(...)` needs no window and can be tested headless. The live views take frames through `pushFrame`, so they can be driven from anything, not only from the server, and they re-register through `ServerTree` so cmd-period does not leave a frozen display behind.
 
-Every plot has `alwaysOnTop_`, `position_`, `writeImage`, and closes on escape.
+Every plot has `alwaysOnTop`, `position_`, `writeImage`, and closes on escape.
 
 ```
 sclang tests/test-compute.scd     # maps, distributions, ticks, FFT unpacking
@@ -77,5 +77,7 @@ sclang tests/test-live.scd        # meter and spectrum against known signals
 sclang tests/check-docs.scd       # every documented example compiles
 sclang tests/render-shots.scd     # regenerate these images
 ```
+
+Run `test-live.scd` on its own: it takes the default server and the audio device, so a second sclang instance running at the same time makes it fail as though the views were broken.
 
 GPL-3.0.

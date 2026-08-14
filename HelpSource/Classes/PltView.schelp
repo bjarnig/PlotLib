@@ -71,16 +71,32 @@ Routine({ var p = PltScatter(x, y).front; 0.4.wait; p.writeImage("~/plot.png"); 
 ::
 
 METHOD:: alwaysOnTop
-METHOD:: alwaysOnTop_
-Keep the window above others, for watching a plot while working elsewhere.
+Show the window, keep it above the others, and return the view, so it reads as an
+instruction and can end a chain.
 code::
-m = PltMeter(2, 0).alwaysOnTop_(true).front;
+m = PltMeter(2, 0).alwaysOnTop;
 ::
+
+METHOD:: alwaysOnTop_
+The same as a setter, so it can be turned off again.
+code::
+m.alwaysOnTop_(false);
+::
+
+METHOD:: isAlwaysOnTop
+Whether the flag is set. Qt applies it when the window is shown, so on a window
+that has not been fronted yet this reads false until it appears.
 
 METHOD:: position
 METHOD:: position_
-Top left corner of the window, the same way link::Classes/ServerMeter:: does it, so
-a set of plots can be placed rather than stacked.
+Where the window sits, the same way link::Classes/ServerMeter:: does it, so a set of
+plots can be placed rather than stacked.
+
+note::
+Window bounds pass through code::Window.flipY::, so y is measured from the strong::
+bottom:: of the screen. Get and set share that convention, so round tripping a
+position works, but a y typed by hand may not land where it reads.
+::
 code::
 (
 PltMeter(2, 0).position_(20 @ 60).front;

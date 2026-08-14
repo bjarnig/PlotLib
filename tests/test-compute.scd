@@ -23,6 +23,16 @@ ok = { |name, cond|
 };
 near = { |a, b, tol = 1e-9| (a - b).abs <= tol };
 
+"--- PltMeter.widthFor ---".postln;
+ok.value("two margins plus a bar and a gap per channel",
+	PltMeter.widthFor(2) == (46 + 14 + (2 * (PltMeter.barWidth + PltMeter.barGap))));
+// every passes the item and its index, and nothing else: a third argument is nil
+ok.value("wider with more channels", {
+	var widths = [1, 2, 4, 8, 16].collect { |n| PltMeter.widthFor(n) };
+	widths.every { |w, i| (i == 0) or: { w > widths[i - 1] } }
+}.value);
+ok.value("zero channels does not give a negative width", PltMeter.widthFor(0) > 60);
+
 "--- PlotLib themes ---".postln;
 ok.value("the default theme is darkBlue", PlotLib.theme == \darkBlue);
 ok.value("three themes are built in", [\darkBlue, \dark, \light].every { |t|

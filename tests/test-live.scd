@@ -3,6 +3,11 @@ Tests for the two views that read from the server: PltMeter and PltSpectrum.
 
 	sclang tests/test-live.scd
 
+Run this one on its own. It boots the default server and takes the audio device, so
+a second sclang instance or an SC IDE with a server running will make it fail in a
+way that looks like a bug in the views: both freeze partway and keep reporting the
+previous tone.
+
 Both are asserted against signals whose level and frequency are known exactly.
 The spectrum tones sit on bin centres (bin * sr / fftSize), so the peak bin must
 come back as that bin and not a neighbour: an off-by-one in the packed FFT frame

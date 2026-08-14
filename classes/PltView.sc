@@ -54,11 +54,35 @@ PltView {
 	front { window.front; ^this }
 	close { window.close; ^this }
 
-	// Keep the plot above other windows, for watching it while working elsewhere.
-	alwaysOnTop { ^window.alwaysOnTop }
-	alwaysOnTop_ { |bool| window.alwaysOnTop_(bool); ^this }
+	/*
+	Keep the plot above other windows, for watching it while working elsewhere.
 
-	// Top left corner, as ServerMeter does it, so a set of plots can be placed.
+	Called with no argument it shows the window and returns the view, so it reads
+	as an instruction and can end a chain:
+
+		m = PltMeter(2, 0).alwaysOnTop;
+
+	Ask with isAlwaysOnTop, and pass false to alwaysOnTop_ to turn it off again.
+	*/
+	// front first: the flag is only applied when the window is shown, so setting it
+	// on an unshown window reads back false until it appears
+	alwaysOnTop {
+		window.front;
+		window.alwaysOnTop_(true);
+		^this
+	}
+
+	alwaysOnTop_ { |bool = true| window.alwaysOnTop_(bool); ^this }
+
+	isAlwaysOnTop { ^window.alwaysOnTop }
+
+	/*
+	Where the window sits, so a set of plots can be placed rather than stacked.
+
+	Window bounds go through Window.flipY, so y is measured from the BOTTOM of the
+	screen, not the top. Get and set are the same convention, so round tripping a
+	position works; a y typed by hand may not land where it reads.
+	*/
 	position { ^Point(window.bounds.left, window.bounds.top) }
 	position_ { |point|
 		point = point.asPoint;

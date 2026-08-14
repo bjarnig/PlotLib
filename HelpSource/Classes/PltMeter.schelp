@@ -59,7 +59,23 @@ Defaults to code::Server.default::. Analysis starts at once if it is running,
 otherwise call strong::start:: later.
 argument:: title
 argument:: width
+Left out, it comes from strong::widthFor::, so a stereo meter is a narrow window
+and a sixteen channel one is a wide one. Pass a number to override.
 argument:: height
+
+METHOD:: widthFor
+The window width for a channel count: the two dB label margins plus
+strong::barWidth:: and strong::barGap:: per channel.
+code::
+PltMeter.widthFor(2);      // 120
+PltMeter.widthFor(8);      // 300
+::
+
+METHOD:: barWidth
+METHOD:: barGap
+The bar and the space beside it, in pixels, used to size the window. The drawing
+itself divides whatever width the window has, so resizing keeps the bars
+proportional.
 
 INSTANCEMETHODS::
 

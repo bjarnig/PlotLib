@@ -22,8 +22,18 @@ PltMeter : PltView {
 	var rmsColor, peakColor, clipColor;
 	var <>rmsColorKey = \ink, <>peakColorKey = \trace, <>clipColorKey = \rose;
 
-	*new { |numChannels = 2, bus = 0, server, title = "meter", width = 300, height = 320|
-		^super.new(title, width, height)
+	// One bar plus its gap per channel, so a stereo meter is a narrow window and a
+	// sixteen channel one is a wide one, rather than both being 300 pixels.
+	*barWidth { ^20 }
+	*barGap { ^10 }
+
+	// the constants are padLeft and padRight below, which hold the dB labels
+	*widthFor { |numChannels = 2|
+		^46 + 14 + (numChannels.max(1) * (this.barWidth + this.barGap))
+	}
+
+	*new { |numChannels = 2, bus = 0, server, title = "meter", width, height = 230|
+		^super.new(title, width ?? { this.widthFor(numChannels) }, height)
 			.initPltMeter(numChannels, bus, server ? Server.default)
 	}
 
@@ -106,7 +116,15 @@ PltMeter : PltView {
 		^this
 	}
 
-	rmsColor { ^rmsColor ?? { PlotLib.color(rmsColorKey) } }
+	// A little lighter than the plot ink: a solid bar of a colour reads heavier
+	// than a scatter of the same colour does. Not on a light ground, where
+	// lightening is what makes a fill disappear.
+	rmsColor {
+		^rmsColor ?? {
+			var base = PlotLib.color(rmsColorKey);
+			if(PlotLib.isLight) { base } { base.blend(Color.white, 0.22) }
+		}
+	}
 	rmsColor_ { |c| rmsColor = c; ^this }
 	peakColor { ^peakColor ?? { PlotLib.color(peakColorKey) } }
 	peakColor_ { |c| peakColor = c; ^this }
@@ -138,10 +156,10 @@ PltMeter : PltView {
 
 	prSlot { |r, i|
 		var w = r.width / numChannels;
-		// proportional padding, bounded at both ends: a fixed cap makes a two
-		// channel meter look like a bar chart and an eight channel one look solid
-		var pad = (w * 0.25).clip(3, 30);
-		^Rect(r.left + (i * w) + pad, r.top, w - (pad * 2), r.height)
+		// half a gap either side, so the bars sit close together and a resized
+		// window keeps them proportional rather than letting them drift apart
+		var pad = (w * 0.16).clip(2, this.class.barGap);
+		^Rect(r.left + (i * w) + pad, r.top, (w - (pad * 2)).max(2), r.height)
 	}
 
 	drawData { |v, r, b|

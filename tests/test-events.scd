@@ -91,6 +91,22 @@ Routine({
 
 	ok.value("reset empties it", { p.reset; p.events.size == 0 }.value);
 
+	"--- window handling on the base class ---".postln;
+	ok.value("alwaysOnTop returns the view, so it can end a chain",
+		p.alwaysOnTop === p);
+	0.4.wait;
+	// Qt applies the flag when the window is shown, so this needs the wait
+	ok.value("and the flag is set", p.isAlwaysOnTop);
+	p.alwaysOnTop_(false);
+	0.3.wait;
+	ok.value("and can be turned off", p.isAlwaysOnTop.not);
+
+	ok.value("position round trips", {
+		p.position_(60 @ 120);
+		0.3.wait;
+		(p.position.x == 60) and: { p.position.y == 120 }
+	}.value);
+
 	p.close;
 	0.3.wait;
 

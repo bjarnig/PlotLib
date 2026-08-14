@@ -6,9 +6,10 @@ Boot the server first.
 
 s.boot;
 
-// A meter and a spectrum on the first output channels
+// A meter and a spectrum on the first output channels. The meter window is as wide
+// as its channel count needs; alwaysOnTop keeps it visible while working.
 (
-~meter = PltMeter(2, 0, s, "output").front;
+~meter = PltMeter(2, 0, s, "output").alwaysOnTop;
 ~spec = PltSpectrum(0, 1024, s, "output").front;
 )
 
@@ -96,7 +97,7 @@ SynthDef(\plt_perc, { |freq = 440, amp = 0.1|
 // All three at once, which is the point of them being separate windows
 (
 ~ev = PltEvents("events", 8, 150, 1200, 40, 700, 380).front;
-~meter = PltMeter(2, 0, s, "level", 240, 300).front;
+~meter = PltMeter(2, 0, s, "level").front;
 ~spec = PltSpectrum(0, 1024, s, "spectrum", 700, 320).front;
 ~seq = ~ev.watch(
 	Pbind(
