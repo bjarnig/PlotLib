@@ -1,20 +1,24 @@
 TITLE:: PlotLib
 summary:: Plots for the things SuperCollider does not draw by itself
 categories:: Libraries>PlotLib
-related:: Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum
+related:: Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum, Classes/PltWave, Classes/PltSpectrogram, Classes/PltVector, Classes/PltEnvelope
 
 DESCRIPTION::
-A small set of link::Classes/UserView:: plots with one palette, one set of axes
-and one way of working: bifurcation diagrams, phase portraits, histograms, a live
-event scatter, a level meter and a spectrum analyser.
+A set of link::Classes/UserView:: plots with one palette, one set of axes and one
+way of working: bifurcation diagrams, phase portraits, histograms, a live event
+scatter, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope
+and envelopes.
 
-For waveforms and running scopes the stock tools are already good, so PlotLib does
-not replace them:
+The stock tools remain the quickest way to glance at a short signal, and PlotLib
+does not replace them:
 code::
 Signal.sineFill(512, [1, 0, 1/3]).plot;   // a wavetable
 { SinOsc.ar(200) }.plot(0.02);            // a moment of a signal
 s.scope;                                  // running scope
 ::
+
+link::Classes/PltWave:: is for what those do badly: a whole file, where drawing
+every sample is not an option and decimating a line through it loses the peaks.
 
 SECTION:: The classes
 
@@ -33,6 +37,12 @@ with a histogram of what has been heard.
 ## link::Classes/PltMeter:: || peak and RMS level per channel, from the server.
 ## link::Classes/PltSpectrum:: || magnitude spectrum, linear or logarithmic in
 frequency.
+## link::Classes/PltWave:: || waveform of recorded material, as min and max per
+pixel column.
+## link::Classes/PltSpectrogram:: || scrolling spectrogram, live or from a file.
+## link::Classes/PltVector:: || vectorscope: one channel against the other.
+## link::Classes/PltEnvelope:: || an Env with its breakpoints, curves and release
+node.
 ::
 
 SECTION:: How the classes are shaped
@@ -76,6 +86,12 @@ q.stop; p.close;
 // listening to the output bus
 m = PltMeter(2, 0).front;
 x = PltSpectrum(0).front;
+
+// recorded sound
+PltWave.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
+PltSpectrogram.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
+PltVector.live(0).front;
+PltEnvelope(Env.perc(0.01, 0.4)).front;
 ::
 
 More in the strong::examples:: folder of the quark, and the tests in

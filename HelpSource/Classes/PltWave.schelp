@@ -1,0 +1,116 @@
+TITLE:: PltWave
+summary:: Waveform of recorded material, as min and max per pixel column
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltSpectrogram, Classes/PltVector, Classes/Signal
+
+DESCRIPTION::
+One vertical line per pixel column, from the lowest to the highest sample in that
+column, with the RMS drawn inside it. Multichannel material gets one panel per
+channel, stacked, sharing the time axis.
+
+link::Classes/Signal#-plot:: draws every sample, which is right for 512 samples and
+unusable for five million. A min and max per column stays legible at any length and
+never drops a peak, which a line through every Nth sample does.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: data
+A collection of numbers for one channel, or a collection of those for several:
+code::PltWave([left, right], 48000)::.
+argument:: sampleRate
+Only used to label the time axis.
+argument:: title
+argument:: columns
+argument:: width
+argument:: height
+
+METHOD:: fromSoundFile
+Read a file in chunks, so a long one never has to be in memory at once. The window
+is titled with the file name.
+argument:: path
+argument:: columns
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: fromBuffer
+A buffer on the server, which arrives asynchronously, so this one answers through
+code::action::.
+code::
+PltWave.fromBuffer(b, action: { |plot| plot.front });
+::
+
+METHOD:: envelope
+The envelope of one channel: code::(mins:, maxs:, rms:)::, one entry per column.
+Columns are never more numerous than samples, so short material gives fewer columns
+rather than empty ones.
+
+METHOD:: envelopeFromSoundFile
+The same, read from a file in chunks.
+argument:: path
+argument:: columns
+argument:: startTime
+argument:: endTime
+argument:: samplesPerColumn
+Bounds the work. sclang would spend a long time visiting every sample of a long
+file, so past this limit it visits an evenly spread subset instead. The stride used
+comes back in the result and is printed in the caption, never applied silently.
+returns:: code::(channels:, duration:, sampleRate:, numChannels:, stride:, startTime:)::
+
+INSTANCEMETHODS::
+
+METHOD:: zoom
+Recompute over a time range. Needs a soundfile source: data handed in directly has
+already been reduced to columns and cannot be looked into more closely.
+code::
+~path = Platform.resourceDir +/+ "sounds/a11wlk01.wav";
+w = PltWave.fromSoundFile(~path).front;
+w.zoom(1.0, 1.4);
+w.zoom(0);
+::
+
+METHOD:: dbScale
+An amplitude axis, or a dB one where the column peak is filled and the RMS drawn
+over it. The distance between the two is the crest factor.
+
+METHOD:: peakDb
+Peak of the whole plot, in dB.
+
+METHOD:: showRms
+METHOD:: floorDb
+Bottom of the dB scale.
+METHOD:: panelGap
+Pixels between stacked channel panels.
+METHOD:: traceColorKey
+METHOD:: rmsColorKey
+Theme keys rather than colours, so a theme change moves them.
+METHOD:: channels
+The envelopes, one Event per channel.
+METHOD:: duration
+METHOD:: sampleRate
+METHOD:: numChannels
+METHOD:: stride
+
+EXAMPLES::
+code::
+// a file
+PltWave.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
+
+// in dB, where the quiet parts of a recording are legible
+(
+PltWave.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav")
+	.dbScale_(true).front;
+)
+
+// a synthesised stereo pair
+(
+PltWave([
+	Signal.fill(88200, { |i| sin(i * 0.02) * (1 - (i / 88200)) }),
+	Signal.fill(88200, { |i| sin(i * 0.031) * ((i / 88200) ** 2) })
+], 44100, "decay and swell").front;
+)
+
+// data only, no window
+PltWave.envelope(Signal.sineFill(4096, [1, 0, 0.3]), 200);
+::

@@ -23,6 +23,107 @@ ok = { |name, cond|
 };
 near = { |a, b, tol = 1e-9| (a - b).abs <= tol };
 
+"--- PltWave.envelope ---".postln;
+ok.value("a full scale sine gives the right envelope and RMS", {
+	var sig = Signal.fill(4096, { |i| sin(i * 2pi / 64) });
+	var e = PltWave.envelope(sig, 100);
+	near.value(e[\mins].minItem, -1, 1e-4)
+		and: { near.value(e[\maxs].maxItem, 1, 1e-4) }
+		and: { near.value(e[\rms].mean, 1 / sqrt(2), 0.01) }
+}.value);
+// the whole point of min/max per column: decimation must not lose a transient
+ok.value("a single spike survives 200 to 1 decimation", {
+	var sig = Signal.fill(100000, { 0 });
+	var e;
+	sig[54321] = 0.9;
+	e = PltWave.envelope(sig, 500);
+	near.value(e[\maxs].maxItem, 0.9, 1e-4)
+}.value);
+ok.value("never more columns than samples",
+	PltWave.envelope(Signal.fill(10, { 0.5 }), 900)[\mins].size == 10);
+ok.value("an empty signal does not raise", PltWave.envelope([], 100)[\mins].size > 0);
+ok.value("silence gives a flat envelope", {
+	var e = PltWave.envelope(0 ! 1000, 50);
+	e[\mins].every { |v| v == 0 } and: { e[\rms].every { |v| v == 0 } }
+}.value);
+
+"--- PltEnvelope.points ---".postln;
+// sampling evenly cuts corners: Env.adsr came back with a peak of 0.965
+ok.value("every Env type is sampled at its exact peak", {
+	[Env.adsr(0.02, 0.2, 0.4, 0.5), Env.perc(0.01, 0.4), Env.triangle(1, 0.8),
+		Env.sine(1, 0.6), Env.linen(0.1, 0.2, 0.3, 0.7),
+		Env([0.01, 1, 0.01], [0.05, 0.5], \exp)].every { |env|
+		var p = PltEnvelope.points(env, 50);
+		near.value(p[1].maxItem, env.levels.maxItem, 1e-9)
+	}
+}.value);
+ok.value("times are sorted and inside the duration", {
+	var env = Env.adsr(0.02, 0.2, 0.4, 0.5);
+	var p = PltEnvelope.points(env, 40);
+	(p[0] == p[0].sort) and: { p[0].last <= (env.duration + 1e-9) }
+		and: { p[0].first >= 0 }
+}.value);
+
+"--- PltSpectrogram.column ---".postln;
+ok.value("a loud bin lands on the row its frequency belongs to", {
+	var frame = 0 ! 513;
+	var col, want;
+	frame[100] = 1.0;                                  // 4687.5 Hz at 48k, 1024
+	col = PltSpectrogram.column(frame, 100, 40, 12000, -78, 0, false, 48000, 1024);
+	want = (100 - (4687.5 / 12000 * 100)).round(1).asInteger;
+	(col.maxIndex - want).abs <= 1
+}.value);
+ok.value("the log axis puts it on the log row", {
+	var frame = 0 ! 513;
+	var col, want;
+	frame[100] = 1.0;
+	col = PltSpectrogram.column(frame, 100, 40, 12000, -78, 0, true, 48000, 1024);
+	want = (100 - ((4687.5.log10 - 40.log10) / (12000.log10 - 40.log10) * 100))
+		.round(1).asInteger;
+	(col.maxIndex - want).abs <= 1
+}.value);
+ok.value("silence is 0 and full scale is 1", {
+	(PltSpectrogram.column(0 ! 513, 20).maxItem == 0)
+		and: { near.value(PltSpectrogram.column(1 ! 513, 20).maxItem, 1, 1e-9) }
+}.value);
+ok.value("row 0 is the top of the picture, so it is the high end", {
+	var lowFrame = 0 ! 513, highFrame = 0 ! 513, lowCol, highCol;
+	lowFrame[5] = 1.0; highFrame[200] = 1.0;
+	lowCol = PltSpectrogram.column(lowFrame, 60);
+	highCol = PltSpectrogram.column(highFrame, 60);
+	highCol.maxIndex < lowCol.maxIndex
+}.value);
+// a log axis has many rows per bin at the low end, and repeating the bin drew
+// them as horizontal bands
+ok.value("sub-bin rows interpolate instead of repeating", {
+	var frame = 0 ! 513, col, lowRows;
+	5.do { |i| frame[i + 1] = (i + 1) / 5 };
+	col = PltSpectrogram.column(frame, 200, 30, 20000, -78, 0, true, 48000, 1024);
+	lowRows = col.copyRange(150, 199);
+	lowRows.asSet.size > 10
+}.value);
+
+"--- PltVector.correlation ---".postln;
+ok.value("identical channels correlate at 1", {
+	var a = Array.fill(500, { |i| sin(i * 0.05) });
+	near.value(PltVector.correlation(a, a), 1, 1e-9)
+}.value);
+ok.value("inverted channels correlate at -1", {
+	var a = Array.fill(500, { |i| sin(i * 0.05) });
+	near.value(PltVector.correlation(a, a.neg), -1, 1e-9)
+}.value);
+ok.value("correlation ignores level", {
+	var a = Array.fill(500, { |i| sin(i * 0.05) });
+	near.value(PltVector.correlation(a, a * 0.25), 1, 1e-9)
+}.value);
+ok.value("quadrature is uncorrelated", {
+	var a = Array.fill(2000, { |i| sin(i * 0.05) });
+	var b = Array.fill(2000, { |i| cos(i * 0.05) });
+	PltVector.correlation(a, b).abs < 0.05
+}.value);
+ok.value("silence gives 0 rather than nan", PltVector.correlation(0 ! 100, 0 ! 100) == 0);
+ok.value("empty gives 0", PltVector.correlation([], []) == 0);
+
 "--- PltMeter.widthFor ---".postln;
 ok.value("two margins plus a bar and a gap per channel",
 	PltMeter.widthFor(2) == (46 + 14 + (2 * (PltMeter.barWidth + PltMeter.barGap))));

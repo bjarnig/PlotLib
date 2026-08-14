@@ -1,0 +1,84 @@
+TITLE:: PltVector
+summary:: Vectorscope: one channel against the other
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltWave, Classes/PltMeter
+
+DESCRIPTION::
+Stereo width, phase and mono compatibility, made visible.
+
+A vertical line means the two channels are identical, a horizontal line means they
+are opposite in phase, a circle means they are unrelated. The diagonals are the mid
+and side axes, so a cloud leaning along one of them is leaning toward mono or toward
+difference. The correlation in the caption says the same as a number.
+
+Older frames are kept and drawn fainter, which is what makes a moving image readable
+rather than a flicker.
+
+CLASSMETHODS::
+
+METHOD:: new
+Two collections of samples.
+argument:: left
+argument:: right
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: live
+Live, from two adjacent busses through a looping link::Classes/RecordBuf::.
+argument:: bus
+argument:: server
+argument:: frames
+Samples held per frame.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: fromSoundFile
+The first two channels of a file, decimated to code::maxFrames::. A mono file plots
+against itself, which is the diagonal.
+
+METHOD:: correlation
+Correlation of two channels: 1 identical, 0 unrelated, -1 inverted. Computed about
+zero rather than about the mean, because a DC offset is a fault in audio and should
+not be quietly removed from the reading.
+
+INSTANCEMETHODS::
+
+METHOD:: pushFrame
+One frame of two channels.
+METHOD:: correlation
+METHOD:: start
+METHOD:: stop
+METHOD:: persistence
+How many past frames are kept.
+METHOD:: alpha
+METHOD:: dotSize
+METHOD:: pollRate
+METHOD:: dotColorKey
+METHOD:: guideColorKey
+METHOD:: xs
+METHOD:: ys
+METHOD:: trails
+
+EXAMPLES::
+code::
+// live
+s.boot;
+v = PltVector.live(0).front;
+x = { var m = PinkNoise.ar(0.2); [m + BrownNoise.ar(0.05), m + BrownNoise.ar(0.05)] }.play;
+v.correlation;
+x.free;
+x = { PinkNoise.ar(0.2) ! 2 }.play;      // identical: a vertical line
+x.free; v.close;
+
+// a file
+PltVector.fromSoundFile("~/sound.wav".standardizePath).front;
+
+// data only
+(
+var n = 2000;
+var a = Array.fill(n, { |i| sin(i * 0.05) });
+PltVector.correlation(a, a.neg);         // -1
+)
+::

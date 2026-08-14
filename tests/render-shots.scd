@@ -111,6 +111,47 @@ Routine({
 	};
 	shot.value("spectrum-log", spec);
 
+	// recorded sound: the file that ships with SuperCollider, so this runs anywhere
+	{
+		var path = Platform.resourceDir +/+ "sounds/a11wlk01.wav";
+		var stereo;
+		shot.value("wave-file", PltWave.fromSoundFile(path, 900, "a11wlk01.wav"));
+		shot.value("wave-db",
+			PltWave.fromSoundFile(path, 900, "a11wlk01.wav, dB").dbScale_(true));
+		stereo = [
+			Signal.fill(88200, { |i| sin(i * 0.02) * (1 - (i / 88200)) }),
+			Signal.fill(88200, { |i| sin(i * 0.031) * ((i / 88200) ** 2) * 0.8 })
+		];
+		shot.value("wave-stereo",
+			PltWave(stereo, 44100, "stereo, decay and swell", 900, 900, 340));
+		shot.value("spectrogram-file",
+			PltSpectrogram.fromSoundFile(path, 1024, 0.25, "a11wlk01.wav"), 1.0);
+		shot.value("spectrogram-log",
+			PltSpectrogram.fromSoundFile(path, 2048, 0.25, "a11wlk01.wav, log")
+				.logFreq_(true), 1.0);
+		shot.value("envelope-adsr",
+			PltEnvelope(Env.adsr(0.02, 0.2, 0.4, 0.5), "Env.adsr"));
+		shot.value("envelope-curves",
+			PltEnvelope(Env([0, 1, 0.3, 0.8, 0], [0.1, 0.3, 0.2, 0.6],
+				[\lin, \exp, \sine, -4]), "mixed curve types"));
+	}.value;
+
+	// vectorscope, from data so the picture is reproducible
+	{
+		var n = 3000;
+		var sine = Array.fill(n, { |i| sin(i * 0.04) * 0.8 });
+		var wide = Array.fill(n, { |i|
+			var m = sin(i * 0.017) * 0.5;
+			[m + 0.3.rand2, m + 0.3.rand2]
+		}).flop;
+		shot.value("vector-mono", PltVector(sine, sine, "identical channels"));
+		shot.value("vector-wide",
+			PltVector(wide[0], wide[1], "correlated mid, random sides"));
+		shot.value("vector-uncorrelated", PltVector(
+			Array.fill(n, { 0.7.rand2 }), Array.fill(n, { 0.7.rand2 }),
+			"independent noise"));
+	}.value;
+
 	"done".postln;
 	0.exit;
 }).play(AppClock);

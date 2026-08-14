@@ -1,0 +1,53 @@
+TITLE:: PltEnvelope
+summary:: An Env drawn with its breakpoints, curves and release node
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/Env, Classes/PltWave
+
+DESCRIPTION::
+link::Classes/Env#-plot:: already exists; this one is here for the same reason as
+the rest of the library: axes in seconds and level, the breakpoints marked, and the
+release node shown, so a sustaining envelope reads differently from a fixed one.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: env
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: points
+The curve as plain data, code::[times, values]::, sampled so that any curve type is
+drawn as the shape it actually is.
+
+note::
+The breakpoint times are added to the even samples. A corner that falls between two
+samples is cut off: sampling code::Env.adsr:: 50 times evenly returned a peak of
+0.965 for an envelope that reaches 1.
+::
+
+INSTANCEMETHODS::
+
+METHOD:: env
+METHOD:: breakpointTimes
+Cumulative time of each breakpoint, which is where the dots go.
+METHOD:: showPoints
+METHOD:: resolution
+METHOD:: curveColorKey
+METHOD:: pointColorKey
+METHOD:: times
+METHOD:: values
+
+EXAMPLES::
+code::
+PltEnvelope(Env.perc(0.01, 0.4), "Env.perc").front;
+PltEnvelope(Env.adsr(0.02, 0.2, 0.4, 0.5), "Env.adsr").front;
+(
+PltEnvelope(Env([0, 1, 0.3, 0.8, 0], [0.1, 0.3, 0.2, 0.6],
+	[\lin, \exp, \sine, -4]), "mixed curves").front;
+)
+
+// what a curve value actually does
+PltEnvelope(Env([0, 1, 0], [0.5, 0.5], -8), "curve -8").front;
+PltEnvelope(Env([0, 1, 0], [0.5, 0.5], 8), "curve 8").front;
+::

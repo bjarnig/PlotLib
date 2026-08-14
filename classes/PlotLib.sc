@@ -199,6 +199,7 @@ PlotLib {
 	// Every class in the quark, for the help overview.
 	*classes {
 		^[PltView, PltScatter, PltHistogram, PltBifurcation, PltPhase,
-			PltEvents, PltMeter, PltSpectrum]
+			PltEvents, PltMeter, PltSpectrum,
+			PltWave, PltEnvelope, PltSpectrogram, PltVector]
 	}
 }

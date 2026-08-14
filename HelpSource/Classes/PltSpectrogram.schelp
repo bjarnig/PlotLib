@@ -1,0 +1,119 @@
+TITLE:: PltSpectrogram
+summary:: Scrolling spectrogram: time across, frequency up, magnitude as brightness
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltSpectrum, Classes/PltWave, Classes/FreqScope
+
+DESCRIPTION::
+link::Classes/FreqScope:: is one spectral slice moving in time. This keeps the
+history, which is where the structure of a sound actually shows.
+
+Each frame writes strong::one column:: into an link::Classes/Image:: and the image
+is blitted, rather than a UserView redrawing several hundred rects per frame. The
+columns ring buffer, and drawing takes two pieces so the newest column is always at
+the right edge.
+
+note::
+Brightness is mapped through strong::gamma::, not linearly. A noise floor 30 dB up
+from code::floorDb:: reads as half ink under a linear map and the whole picture
+washes out.
+::
+
+note::
+On a logarithmic axis the low end has many rows per bin: at 2048 points there are
+nine bins below 200 Hz. Repeating the bin draws them as horizontal bands, so a row
+narrower than a bin interpolates between neighbours instead.
+::
+
+CLASSMETHODS::
+
+METHOD:: new
+Live analysis of a bus.
+argument:: bus
+argument:: fftSize
+argument:: server
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: fromSoundFile
+A whole file, analysed offline in the language with link::Classes/Signal#-fft::, so
+no server is needed and the result is the same on every run. Multichannel files are
+mixed to mono, since a spectrogram of one channel of a stereo file misleads.
+argument:: path
+argument:: fftSize
+argument:: hop
+Fraction of a window between frames.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: framesFromSoundFile
+The analysis on its own: code::(frames:, duration:, sampleRate:)::, where frames is
+an Array of magnitude arrays.
+
+METHOD:: column
+One column of the picture as values from 0 to 1, top row first. Pure, so the row
+mapping can be tested without a window.
+argument:: frame
+argument:: rows
+argument:: minHz
+argument:: maxHz
+argument:: floorDb
+argument:: ceilDb
+argument:: logFreq
+argument:: sampleRate
+argument:: fftSize
+
+INSTANCEMETHODS::
+
+METHOD:: start
+METHOD:: stop
+The analysis synth and the poller. Rebuilt through link::Classes/ServerTree::, so
+they come back after cmd-period.
+
+METHOD:: pushFrame
+One frame of magnitudes, written as one column. Anything can call it.
+
+METHOD:: logFreq
+Logarithmic frequency axis, labelled where a listener thinks. Changing it clears
+the history, since the row mapping is no longer the same.
+
+METHOD:: span
+Seconds visible.
+METHOD:: minHz
+Bottom of a logarithmic axis.
+METHOD:: maxHz
+METHOD:: floorDb
+METHOD:: ceilDb
+METHOD:: gamma
+Brightness curve. Higher darkens the floor and leaves the peaks.
+METHOD:: pollRate
+Frames per second, which also sets how many columns a span holds.
+METHOD:: mags
+The most recent frame.
+METHOD:: sampleRate
+The file's rate offline, the server's when live. Getting this wrong puts every
+partial on the wrong row.
+METHOD:: bus
+METHOD:: fftSize
+METHOD:: server
+
+EXAMPLES::
+code::
+// a whole file, offline
+PltSpectrogram.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
+
+// the same on a log axis, where formants read as shapes
+(
+PltSpectrogram.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav", 2048)
+	.logFreq_(true).front;
+)
+
+// live
+s.boot;
+x = PltSpectrogram(0).front;
+y = { Blip.ar(LFNoise0.kr(2).exprange(80, 400), 20, 0.2) ! 2 }.play;
+x.span_(16);           // a longer window
+x.gamma_(3);           // a darker floor
+y.free; x.close;
+::

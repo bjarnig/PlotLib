@@ -1,6 +1,6 @@
 # PlotLib
 
-Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, a live event scatter, a level meter and a spectrum analyser.
+Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, a live event scatter, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope and envelopes.
 
 ![bifurcation diagram of the logistic map](images/bifurcation.png)
 
@@ -31,6 +31,12 @@ q = p.watch(Pbind(\dur, Pwhite(0.08, 0.3), \freq, Pwhite(200, 900))).play;
 // what the output bus is doing
 PltMeter(2, 0).front;
 PltSpectrum(0).front;
+
+// recorded sound
+PltWave.fromSoundFile(path).front;
+PltSpectrogram.fromSoundFile(path).logFreq_(true).front;
+PltVector.live(0).front;
+PltEnvelope(Env.perc(0.01, 0.4)).front;
 ```
 
 `PltScatter` and `PltView` are below, and `PlotLib` holds the palette and the
@@ -40,6 +46,23 @@ pure helpers. Reference under **PlotLib**, with more in
 ### Events
 
 ![live event scatter with a frequency histogram](images/events.png)
+
+### Recorded sound
+
+`PltWave` draws min and max per pixel column, so a whole file stays legible and no peak is lost. `Signal.plot` draws every sample, which is right for 512 and unusable for five million.
+
+![waveform of a soundfile](images/wave-file.png)
+
+`PltSpectrogram` keeps the history that `FreqScope` throws away. Each frame writes one column into an `Image` which is then blitted, so the cost per frame is a column rather than a full redraw.
+
+![spectrogram on a logarithmic frequency axis](images/spectrogram-log.png)
+
+`PltVector` is a vectorscope: identical channels draw a vertical line, inverted ones a horizontal line, unrelated ones a cloud, with the correlation as a number. `PltEnvelope` draws an `Env` with its breakpoints, curve shapes and release node.
+
+<p>
+<img src="images/vector-wide.png" alt="vectorscope" height="300">
+<img src="images/envelope-curves.png" alt="envelope with mixed curve types" height="300">
+</p>
 
 ### Meter and spectrum
 
@@ -79,5 +102,9 @@ sclang tests/render-shots.scd     # regenerate these images
 ```
 
 Run `test-live.scd` on its own: it takes the default server and the audio device, so a second sclang instance running at the same time makes it fail as though the views were broken.
+
+## Acknowledgements
+
+The waveform family was prompted by looking through the examples of Marinos Koutsomichalis, *Mapping and Visualization with SuperCollider* (Packt, 2013), in particular its approach of building a spectrogram by writing pixels into an `Image`. No code from it is used here.
 
 GPL-3.0.
