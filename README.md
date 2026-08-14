@@ -1,8 +1,6 @@
 # PlotLib
 
-Plots for the things SuperCollider does not draw by itself: bifurcation diagrams,
-phase portraits, histograms, a live event scatter, a level meter and a spectrum
-analyser.
+Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, a live event scatter, a level meter and a spectrum analyser.
 
 ![bifurcation diagram of the logistic map](images/bifurcation.png)
 
@@ -12,7 +10,7 @@ analyser.
 Quarks.install("https://github.com/bjarnig/PlotLib");
 ```
 
-Recompile the class library afterwards. Developed against SuperCollider 3.14.
+Developed against SuperCollider 3.14.
 
 ## Use
 
@@ -35,10 +33,9 @@ PltMeter(2, 0).front;
 PltSpectrum(0).front;
 ```
 
-`PltScatter` and `PltView` sit underneath, and `PlotLib` holds the palette and the
-pure helpers. Full reference is in the help browser under **PlotLib**, with more in
-[`examples/`](examples). For waveforms and running scopes the stock tools are
-already good, so this does not replace them.
+`PltScatter` and `PltView` are below, and `PlotLib` holds the palette and the
+pure helpers. Reference under **PlotLib**, with more in
+[`examples/`](examples). 
 
 ### Events
 
@@ -52,11 +49,7 @@ already good, so this does not replace them.
 
 ![spectrum analyser on a logarithmic frequency axis](images/spectrum-live-log.png)
 
-`PltMeter` is not a replacement for `s.meter`, which is the fixed monitor for a
-whole server. This one points at a bus, has a settable dB scale and update rate,
-holds peaks separately from the peak line, exposes `peaks` / `rmss` / `clipping` to
-code, and can be driven from the language with `pushFrame`. Both recover after
-cmd-period. See the help file for the full comparison.
+`PltMeter` points at a bus, has a settable dB scale and update rate, holds peaks separately from the peak line, exposes `peaks` / `rmss` / `clipping` to code, and can be driven from the language with `pushFrame`. Both recover after cmd-period. See the help file for the full comparison.
 
 ## Themes
 
@@ -73,11 +66,7 @@ PlotLib.theme_(\light);
 
 ## Notes
 
-Computing is separate from drawing: the maths is a class method returning plain
-data, so `PltBifurcation.points(...)` needs no window and can be tested headless.
-The live views take frames through `pushFrame`, so they can be driven from anything,
-not only from the server, and they re-register through `ServerTree` so cmd-period
-does not leave a frozen display behind.
+Computing is separate from drawing: the maths is a class method returning plain data, so `PltBifurcation.points(...)` needs no window and can be tested headless. The live views take frames through `pushFrame`, so they can be driven from anything, not only from the server, and they re-register through `ServerTree` so cmd-period does not leave a frozen display behind.
 
 Every plot has `alwaysOnTop_`, `position_`, `writeImage`, and closes on escape.
 
