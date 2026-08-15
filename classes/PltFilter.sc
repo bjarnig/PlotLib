@@ -141,7 +141,7 @@ PltFilter : PltView {
 
 	caption {
 		^curves.size.asString + if(curves.size == 1) { "response," } { "responses," }
-			+ (sampleRate / 1000).round(0.1) ++ " kHz"
+			+ PlotLib.fmt(sampleRate / 1000, 100) ++ " kHz"
 	}
 
 	prDraw { |v|

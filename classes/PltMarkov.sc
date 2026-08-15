@@ -113,7 +113,9 @@ PltMarkov : PltView {
 	prDraw { |v|
 		var r = this.plotRect(v);
 		var n = matrix.size;
-		var grid = Rect(r.left, r.top, r.width, (r.height - stripHeight - 10).max(10));
+		// the gap holds the "stationary" label, which otherwise sits on the grid's
+		// bottom edge
+		var grid = Rect(r.left, r.top, r.width, (r.height - stripHeight - 26).max(10));
 		var cw = grid.width / n, ch = grid.height / n;
 		var font = PlotLib.font(9), lut = this.prRamp;
 
@@ -154,7 +156,7 @@ PltMarkov : PltView {
 				font, PlotLib.color(\muted));
 		};
 
-		this.prDrawStationary(Rect(grid.left, grid.bottom + 10, grid.width, stripHeight),
+		this.prDrawStationary(Rect(grid.left, grid.bottom + 26, grid.width, stripHeight),
 			cw, font);
 
 		Pen.stringLeftJustIn("to", Rect(grid.left, r.top - 29, grid.width, 12), font,
