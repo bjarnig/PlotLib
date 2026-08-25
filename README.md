@@ -1,6 +1,6 @@
 # PlotLib
 
-Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, event scatters, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks, mapping curves, filter responses and Markov chains.
+Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, event scatters, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks, mapping curves, filter responses, Markov chains, wavesets and onset novelty.
 
 ![bifurcation diagram of the logistic map](images/bifurcation.png)
 
@@ -46,6 +46,10 @@ PltMap(\freq.asSpec).add(ControlSpec(20, 20000, \lin), "lin").marker_(0.25).fron
 PltFilter([0.5, 0.5, 0, 0, 0], "two point averager").front;
 PltDistribution({ exprand(0.01, 1.0) } ! 20000, 0.01, 1, 40, \logUniform).front;
 PltMarkov([[0.9, 0.1], [0.5, 0.5]], ["a", "b"]).front;
+
+// wavesets, and the curve an onset detector looks at
+PltWavesets.fromSoundFile(path).front;
+PltNovelty.fromSoundFile(path).front;
 ```
 
 Reference in the help browser under **PlotLib**, more in [`examples/`](examples).
@@ -57,6 +61,12 @@ Reference in the help browser under **PlotLib**, more in [`examples/`](examples)
 ![waveform of a soundfile](images/wave-file.png)
 
 ![spectrogram on a logarithmic frequency axis](images/spectrogram-log.png)
+
+`PltWavesets` cuts the signal at zero crossings and draws the pitch and peak of each one, with a chosen waveset at its own scale. The segmentation agrees with the Wavesets quark exactly. `PltNovelty` shows the curve an onset detector looks at, with the threshold and its detections.
+
+![wavesets of speech with one drawn large](images/wavesets-file.png)
+
+![spectral novelty with detected onsets](images/novelty-file.png)
 
 `PltVector` is a vectorscope, `PltEnvelope` draws an `Env` as the shape it is.
 

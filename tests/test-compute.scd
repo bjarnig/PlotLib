@@ -23,6 +23,64 @@ ok = { |name, cond|
 };
 near = { |a, b, tol = 1e-9| (a - b).abs <= tol };
 
+"--- PltWavesets.segments ---".postln;
+ok.value("a sine at 100 samples per cycle gives cycles of about 100", {
+	var seg = PltWavesets.segments(Signal.fill(10000, { |i| sin(i * 2pi / 100) }), 10);
+	(seg[\lengths].size == 98) and: { near.value(seg[\lengths].mean, 100, 0.5) }
+		and: { seg[\amps].every { |a| near.value(a, 1, 1e-6) } }
+}.value);
+ok.value("a waveset length is a period, so it implies a pitch", {
+	near.value(PltWavesets.frequencies([100], 48000).first, 480, 1e-9)
+		and: { near.value(PltWavesets.frequencies([48000], 48000).first, 1, 1e-9) }
+}.value);
+// minLength merges cycles too short to be one, exactly as the quark does
+ok.value("minLength merges short cycles", {
+	var sig = Signal.fill(2000, { |i| sin(i * 2pi / 8) });
+	PltWavesets.segments(sig, 10)[\lengths].size
+		< PltWavesets.segments(sig, 2)[\lengths].size
+}.value);
+ok.value("silence yields no wavesets",
+	PltWavesets.segments(Signal.fill(1000, { 0 }), 10)[\lengths].size == 0);
+/*
+The segmentation must agree with the Wavesets quark, which is the reference for
+this convention: an upward crossing from non-positive to positive, a waveset from
+one crossing to the next, minLength suppressing the rest. Skipped when the quark
+is not installed, since PlotLib does not depend on it.
+*/
+if(\Wavesets.asClass.notNil) {
+	ok.value("the segmentation agrees with the Wavesets quark exactly", {
+		var sig = Signal.fill(8000, { |i| (sin(i * 2pi / 97) * 0.6) + (sin(i * 2pi / 31) * 0.3) });
+		var mine = PltWavesets.segments(sig, 10);
+		var quark = \Wavesets.asClass.new(\plotlibCheck, sig, 48000);
+		quark.analyse;
+		(quark.lengths == mine[\lengths]) and: { quark.amps == mine[\amps] }
+			and: { quark.fracXings == mine[\fracXings] }
+	}.value);
+} {
+	"  skip  Wavesets quark not installed, cross check not run".postln;
+};
+
+"--- PltNovelty ---".postln;
+ok.value("identical frames have no novelty",
+	PltNovelty.flux([1 ! 8, 1 ! 8, 1 ! 8]).every { |v| v == 0 });
+// only increases count: a note ending is not a note starting
+ok.value("a rise counts and a fall does not", {
+	var f = PltNovelty.flux([0 ! 8, 1 ! 8, 0 ! 8, 0 ! 8]);
+	near.value(f[1], 1, 1e-9) and: { near.value(f[2], 0, 1e-9) }
+		and: { near.value(f[0], 0, 1e-9) }
+}.value);
+ok.value("peaks are picked above the threshold and at local maxima",
+	PltNovelty.peaks([0, 0.1, 0.9, 0.2, 0, 0.1, 0.8, 0.1, 0, 0.05], 0.25, 1) == [2, 6]);
+// a plain threshold crossing fires several times on one attack
+ok.value("minGap suppresses a doubled attack",
+	PltNovelty.peaks([0, 0.9, 0.85, 0.1, 0, 0, 0, 0], 0.25, 4) == [1]);
+ok.value("nothing over the threshold gives nothing",
+	PltNovelty.peaks([0.1, 0.2, 0.1], 0.5, 1).isEmpty);
+ok.value("the threshold changes how many are found", {
+	var f = [0, 0.3, 0, 0.6, 0, 0.9, 0];
+	(PltNovelty.peaks(f, 0.2, 1).size == 3) and: { PltNovelty.peaks(f, 0.8, 1).size == 1 }
+}.value);
+
 "--- PltFilter: responses with known answers ---".postln;
 ok.value("a passthrough is 0 dB and 0 phase everywhere", {
 	var r = PltFilter.biquadResponse([1, 0, 0, 0, 0], [1, 1000, 12000, 23999], 48000);

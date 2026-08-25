@@ -1,0 +1,104 @@
+TITLE:: PltNovelty
+summary:: Spectral novelty with the detection threshold and the onsets it picks
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/Onsets, Classes/PltTrack, Classes/PltSpectrogram
+
+DESCRIPTION::
+The curve an onset detector actually looks at, with the threshold drawn across it
+and the detections as marks along the top. A missed hit or a doubled trigger stops
+being mysterious.
+
+Only increases in magnitude count. A spectrum falling away is not an onset, and
+counting the whole difference makes every note ending look like a note starting.
+
+In live mode the server's own link::Classes/Onsets:: decisions are drawn along the
+bottom in a second colour, so its behaviour can be compared with the curve.
+
+note::
+Novelty is normalised to its own maximum, so the threshold reads 0 to 1 whatever the
+material. Live, the maximum decays slowly, so a loud passage does not flatten
+everything after it.
+::
+
+CLASSMETHODS::
+
+METHOD:: fromSoundFile
+A whole file, offline, from the same frames link::Classes/PltSpectrogram:: computes.
+argument:: path
+argument:: fftSize
+argument:: hop
+Fraction of a window between frames.
+argument:: threshold
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: live
+From a bus, with the server's Onsets drawn alongside.
+argument:: bus
+argument:: fftSize
+argument:: server
+argument:: threshold
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: flux
+Novelty per frame: the sum of increases in magnitude, normalised to its maximum.
+
+METHOD:: peaks
+Frames above the threshold that are also local maxima, with anything inside
+code::minGapFrames:: of the last pick suppressed. A plain threshold crossing fires
+several times on one attack, which is what a doubled onset is.
+
+INSTANCEMETHODS::
+
+METHOD:: onsetTimes
+The onsets in seconds, offset to the middle of the analysis window. A frame is named
+by where it starts, and a 1024 point window at 48 kHz starts 11 ms before the middle
+of what it heard, which reported every click that much too early.
+
+METHOD:: threshold
+Setting it repicks the onsets, so a threshold can be dragged and the result watched.
+
+METHOD:: flux
+METHOD:: onsets
+Frame indices.
+METHOD:: minGap
+Seconds of suppression after a pick.
+METHOD:: span
+Seconds visible, live.
+METHOD:: pollRate
+METHOD:: duration
+METHOD:: frameRate
+METHOD:: sampleRate
+METHOD:: reset
+METHOD:: start
+METHOD:: stop
+METHOD:: pushFrame
+One frame of magnitudes, from anywhere.
+METHOD:: fluxColorKey
+METHOD:: onsetColorKey
+METHOD:: serverColorKey
+
+EXAMPLES::
+code::
+// a file, with the threshold visible
+n = PltNovelty.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
+n.threshold_(0.4);      // fewer onsets, repicked at once
+n.threshold_(0.15);     // more
+
+// live, with the server's own decisions along the bottom
+s.boot;
+n = PltNovelty.live(0).front;
+x = Pbind(\dur, 0.3, \freq, Pwhite(200, 800), \sustain, 0.05).play;
+x.stop; n.close;
+
+// data only: the flux of a spectrogram's frames
+(
+var a = PltSpectrogram.framesFromSoundFile(
+	Platform.resourceDir +/+ "sounds/a11wlk01.wav", 1024, 0.25);
+var f = PltNovelty.flux(a[\frames]);
+PltNovelty.peaks(f, 0.3, 4).size;
+)
+::

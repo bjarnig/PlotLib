@@ -206,6 +206,7 @@ PlotLib {
 		^[PltView, PltScatter, PltHistogram, PltBifurcation, PltPhase,
 			PltEvents, PltMeter, PltSpectrum,
 			PltWave, PltEnvelope, PltSpectrogram, PltVector,
-			PltTrack, PltMap, PltFilter, PltDistribution, PltMarkov]
+			PltTrack, PltMap, PltFilter, PltDistribution, PltMarkov,
+			PltWavesets, PltNovelty]
 	}
 }

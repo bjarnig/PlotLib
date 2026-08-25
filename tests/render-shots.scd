@@ -229,6 +229,19 @@ Routine({
 		shot.value("markov-four", mk);
 	}.value;
 
+	// wavesets and novelty, from the file that ships with SuperCollider
+	{
+		var path = Platform.resourceDir +/+ "sounds/a11wlk01.wav";
+		var w = PltWavesets.fromSoundFile(path, 0, 4000000, 10, "a11wlk01.wav");
+		w.selectAt(0.85);
+		shot.value("wavesets-file", w, 1.2);
+		shot.value("wavesets-sine",
+			PltWavesets(Signal.fill(48000, { |i| sin(i * 2pi * 220 / 48000) * 0.8 }),
+				48000, 10, "a 220 Hz sine"));
+		shot.value("novelty-file",
+			PltNovelty.fromSoundFile(path, 1024, 0.25, 0.25, "a11wlk01.wav"), 1.0);
+	}.value;
+
 	"done".postln;
 	0.exit;
 }).play(AppClock);

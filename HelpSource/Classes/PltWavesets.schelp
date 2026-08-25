@@ -1,0 +1,98 @@
+TITLE:: PltWavesets
+summary:: The signal cut at zero crossings: pitch and peak per waveset, and one drawn large
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltWave, Classes/PltNovelty
+
+DESCRIPTION::
+Three panels sharing a time axis: the pitch each waveset implies, its peak, and the
+chosen waveset at its own scale. A waveset is a shape, and the shapes differ wildly
+inside one sound, which is the whole reason for waveset synthesis.
+
+The segmentation follows the Wavesets quark exactly, so the two agree: a crossing is
+a move from non-positive to positive, a waveset runs from one crossing to the next,
+and code::minLength:: suppresses the ones too short to be a cycle. The test suite
+cross checks against the quark when it is installed.
+
+CLASSMETHODS::
+
+METHOD:: new
+argument:: signal
+argument:: sampleRate
+argument:: minLength
+Shortest waveset in samples. 10 is the quark's default, which puts the ceiling
+around 4.4 kHz.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: fromSoundFile
+One channel of a file.
+argument:: path
+argument:: channel
+argument:: maxFrames
+Caps what is held in memory for the detail panel.
+argument:: minLength
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: segments
+The wavesets of a signal: code::(xings:, fracXings:, lengths:, amps:)::, named as
+the quark names them. code::fracXings:: interpolate the crossing between the two
+samples that straddle it, so a length is not quantised. code::amps:: is the peak
+magnitude of each waveset, positive or negative, whichever is larger.
+
+METHOD:: frequencies
+The pitch each length implies. A waveset is one cycle by definition, so its length
+is a period.
+
+INSTANCEMETHODS::
+
+METHOD:: select
+Which waveset the detail panel draws, by index.
+METHOD:: selectAt
+The same, by time in seconds.
+METHOD:: wavesetAt
+The samples of one waveset.
+METHOD:: frequencies
+METHOD:: xings
+METHOD:: fracXings
+METHOD:: lengths
+METHOD:: amps
+METHOD:: signal
+METHOD:: sampleRate
+METHOD:: duration
+METHOD:: selected
+METHOD:: minHz
+METHOD:: maxHz
+Range of the pitch panel, which is logarithmic.
+METHOD:: panelGap
+METHOD:: pitchColorKey
+METHOD:: ampColorKey
+METHOD:: traceColorKey
+
+EXAMPLES::
+code::
+// speech, where the pitch trace and the noisy consonants separate clearly
+(
+w = PltWavesets.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
+w.selectAt(0.85);
+)
+
+// a sine: every waveset the same length, the pitch a flat line
+(
+PltWavesets(Signal.fill(48000, { |i| sin(i * 2pi * 220 / 48000) * 0.8 }),
+	48000, 10, "220 Hz").front;
+)
+
+// step through the wavesets and watch the shape change
+(
+Routine({ 200.do { |i| w.select(600 + i); 0.08.wait } }).play(AppClock);
+)
+
+// data only
+(
+var seg = PltWavesets.segments(Signal.fill(10000, { |i| sin(i * 2pi / 100) }), 10);
+[seg[\lengths].mean, PltWavesets.frequencies(seg[\lengths], 48000).mean];
+)
+::
