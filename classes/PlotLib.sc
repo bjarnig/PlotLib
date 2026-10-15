@@ -207,6 +207,7 @@ PlotLib {
 			PltEvents, PltMeter, PltSpectrum,
 			PltWave, PltEnvelope, PltSpectrogram, PltVector,
 			PltTrack, PltMap, PltFilter, PltDistribution, PltMarkov,
-			PltWavesets, PltNovelty]
+			PltWavesets, PltNovelty,
+			PltObservers, PltCut, PltUmwelt, PltConditioning, PltRecurrence]
 	}
 }

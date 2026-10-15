@@ -1,0 +1,81 @@
+TITLE:: PltCut
+summary:: The events an onset threshold makes, at every threshold
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltNovelty, Classes/PltConditioning
+
+DESCRIPTION::
+A detection function and the events it yields, one row per threshold from code::lo::
+to code::hi::. An event that persists down many rows is strongly in the signal; one
+that appears, vanishes and comes back belongs as much to the threshold and the
+minimum gap as to the sound. The bars in the right margin count the events at each
+threshold.
+
+Above, the curve at the chosen cut: ink above the threshold, muted below it, where
+the detector discards what it measured. The caption gives the share of the curve that
+falls below. Click or drag in the raster to move the cut.
+
+The picking is link::Classes/PltNovelty::'s: a local maximum above the threshold,
+with anything within code::minGap:: of the last pick suppressed.
+
+CLASSMETHODS::
+
+METHOD:: fromSoundFile
+Spectral novelty from a file.
+argument:: path
+argument:: fftSize
+argument:: hop
+argument:: steps
+Number of thresholds.
+argument:: lo
+argument:: hi
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: new
+Any detection function, 0 to 1.
+argument:: values
+argument:: frameRate
+argument:: steps
+argument:: lo
+argument:: hi
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: sweep
+The peaks at each threshold, as frame indices.
+argument:: values
+argument:: thresholds
+argument:: minGapFrames
+
+METHOD:: outside
+The share of the curve's total that lies below a threshold.
+argument:: values
+argument:: threshold
+
+INSTANCEMETHODS::
+METHOD:: threshold
+The chosen cut.
+METHOD:: minGap
+Seconds; setting it resweeps.
+METHOD:: onsetTimes
+The events at the chosen cut, in seconds.
+METHOD:: rows
+METHOD:: thresholds
+METHOD:: values
+METHOD:: frameRate
+METHOD:: offset
+Seconds from a frame's start to the middle of its window.
+METHOD:: duration
+METHOD:: gapFrames
+METHOD:: countWidth
+METHOD:: curveShare
+
+EXAMPLES::
+code::
+c = PltCut.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
+c.threshold_(0.5);
+c.minGap_(0.15);     // fewer, and different, events at every threshold
+c.onsetTimes;
+::

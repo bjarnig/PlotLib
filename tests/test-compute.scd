@@ -524,6 +524,98 @@ ok.value("the nyquist bin is half the sample rate",
 ok.value("bin spacing is sr/n",
 	near.value(PltSpectrum.binFreq(1, 1024, 48000), 46.875));
 
+"--- PltObservers ---".postln;
+ok.value("the centroid of one bin is that bin's frequency", {
+	var f = 0.0 ! 513; f[100] = 1;
+	near.value(PltObservers.describe(\centroid, f, 48000, 1024), 100 * 46.875)
+}.value);
+ok.value("a flat spectrum has flatness 1, one bin nearly 0", {
+	var one = 0.0 ! 513; one[40] = 1;
+	near.value(PltObservers.describe(\flatness, 1.0 ! 513), 1, 1e-9)
+		and: { PltObservers.describe(\flatness, one) < 1e-6 }
+}.value);
+ok.value("rolloff and peak of one bin are that bin", {
+	var f = 0.0 ! 513; f[64] = 1;
+	near.value(PltObservers.describe(\rolloff, f, 48000, 1024), 64 * 46.875)
+		and: { near.value(PltObservers.describe(\peak, f, 48000, 1024), 64 * 46.875) }
+}.value);
+ok.value("flux counts only increases", {
+	PltObservers.describe(\flux, [1, 3, 0.5], prev: [2, 1, 0.5]) == 2
+}.value);
+ok.value("resampling onto the same grid changes nothing", {
+	var t = PltObservers.grid(10, 1);
+	PltObservers.resample((1..10), t, t) == (1..10)
+}.value);
+ok.value("a coarse observer is held, not interpolated", {
+	PltObservers.resample([1, 5], [0.25, 0.75], PltObservers.grid(8, 1)) == [1, 1, 1, 1, 5, 5, 5, 5]
+}.value);
+ok.value("correlation is 1 with itself and -1 with its negation", {
+	var a = [1, 4, 2, 8, 5, 7];
+	near.value(PltObservers.correlation(a, a), 1) and: { near.value(PltObservers.correlation(a, a.neg), -1) }
+}.value);
+ok.value("identical observers agree completely",
+	near.value(PltObservers.agreement([[1, 3, 2], [1, 3, 2], [1, 3, 2]]), 1));
+ok.value("runs are half-open stretches of true",
+	PltObservers.runs([false, true, true, false, true]) == [[1, 3], [4, 5]]);
+ok.value("normalise spans 0 to 1", {
+	var n = PltObservers.normalise((0..100), 0, 1);
+	(n.first == 0) and: { n.last == 1 }
+}.value);
+
+"--- PltCut ---".postln;
+ok.value("outside is the share of the curve under the cut",
+	near.value(PltCut.outside([0.2, 0.8], 0.5), 0.7));
+ok.value("a cut above every value makes no events",
+	PltCut.sweep([0, 0.5, 0, 0.9, 0], [0.95], 1)[0].size == 0);
+ok.value("a low cut finds both peaks, a middle one only the higher",
+	PltCut.sweep([0, 0.5, 0, 0.9, 0], [0.1, 0.7], 1) == [[1, 3], [3]]);
+
+"--- PltUmwelt ---".postln;
+// IEC 61672 table values, to the table's 0.1 dB
+ok.value("A-weighting matches the standard at 50, 100, 1k and 10k", {
+	[[50, -30.2], [100, -19.1], [1000, 0], [10000, -2.5]].every { |p|
+		near.value(PltUmwelt.aWeight(p[0]), p[1], 0.15)
+	}
+}.value);
+ok.value("an Integer frequency does not overflow",
+	near.value(PltUmwelt.aWeight(1000), PltUmwelt.aWeight(1000.0)));
+ok.value("mel and its inverse round trip", near.value(PltUmwelt.melHz(PltUmwelt.mel(1234)), 1234, 1e-6));
+ok.value("1000 Hz is 1000 mel", near.value(PltUmwelt.mel(1000), 1000, 0.05));
+ok.value("the DCT inverts with every coefficient kept", {
+	var v = [3, -1, 4, 1, -5, 9.0];
+	(PltUmwelt.idct(PltUmwelt.dct(v, 6), 6) - v).abs.maxItem < 1e-9
+}.value);
+ok.value("a flat spectrum reads 0 dB in every mel band", {
+	var bank = PltUmwelt.melBank(48000, 2049, 40, 20, 16000);
+	PltUmwelt.melEnergies(1.0 ! 2049, bank).every { |db| db.abs < 1e-6 }
+}.value);
+ok.value("the average of identical frames is the frame",
+	PltUmwelt.average([[1, 2, 3], [1, 2, 3]]) == [1, 2, 3]);
+
+"--- PltConditioning ---".postln;
+// Lag's lagTime is 60 dB of convergence
+ok.value("a lag reaches 60 dB of a step in its lag time", {
+	var y = PltConditioning.lag([0] ++ (1 ! 50), 100, 0.5);
+	near.value(y[50], 0.999, 1e-9)
+}.value);
+ok.value("hysteresis holds between its thresholds",
+	PltConditioning.hysteresis([0, 0.5, 0.7, 0.5, 0.3, 0.5, 0.7], 0.6, 0.4) == [0, 0, 1, 1, 0, 0, 1]);
+ok.value("rises are the frames where a gate opens",
+	PltConditioning.rises([1, 1, 0, 1, 0, 0, 1]) == [0, 3, 6]);
+
+"--- PltRecurrence ---".postln;
+ok.value("similarity is symmetric, the diagonal brightest", {
+	var m = PltRecurrence.matrix([[0], [1], [3], [7]]);
+	(m == m.flop) and: { (0..3).every { |i| m[i][i] >= m[i].maxItem } }
+}.value);
+ok.value("nearer moments are more alike",
+	PltRecurrence.matrix([[0], [1], [3]]).at(0).at(1) > PltRecurrence.matrix([[0], [1], [3]]).at(0).at(2));
+ok.value("descriptor features are z-scored", {
+	var frames = Array.fill(20, { |i| var f = 0.0 ! 65; f[i + 1] = 1; f });
+	var v = PltRecurrence.features(frames, [\centroid], 48000, 128, 20);
+	near.value(v.flop[0].mean, 0, 1e-9) and: { near.value(v.flop[0].stdDev, 1, 1e-6) }
+}.value);
+
 "".postln;
 ("checks: " ++ checks ++ ", failures: " ++ fails).postln;
 if(fails > 0) { "*** FAILURES ***".postln } { "all compute tests passed".postln };

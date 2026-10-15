@@ -1,0 +1,117 @@
+TITLE:: PltObservers
+summary:: Several analysers on one sound, read through one another
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltUmwelt, Classes/PltRecurrence, Classes/PltTrack
+
+DESCRIPTION::
+One sound measured by several observers, each a descriptor at an analysis size. Every
+track is normalised to its own range and drawn with the others faintly behind it; the
+last panel is their spread, frame by frame. Where it rises, the observers disagree
+about what the sound is doing, and that disagreement is the information.
+
+Frames quieter than code::floorDb:: are shaded. Every descriptor still reports a
+value there, and a centroid of near silence is as confident as any other.
+
+note::
+Tracks are normalised between their 2nd and 98th percentiles, so they compare as
+shapes. The caption gives the mean correlation over every pair.
+::
+
+CLASSMETHODS::
+
+METHOD:: fromSoundFile
+argument:: path
+argument:: observers
+An Array of Events: code::(descriptor: \centroid, fftSize: 1024)::, optionally with
+code::name:: and a code::func:: of code::{ |frame, sampleRate, fftSize, prev| }:: in
+place of a descriptor. Defaults to code::defaultObservers::.
+argument:: hop
+Fraction of a window between frames.
+argument:: points
+Width of the shared time grid.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: sweep
+One descriptor at several FFT sizes. The coarse observers keep their steps, so what
+a window length decides is visible.
+argument:: path
+argument:: descriptor
+argument:: sizes
+argument:: hop
+argument:: points
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: new
+Any analysers, as an Array of Arrays of values each spread evenly over
+code::duration::. A pitch track from another program compares this way.
+argument:: values
+argument:: duration
+argument:: names
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: describe
+One number from one frame of magnitudes: code::\centroid::, code::\spread::,
+code::\rolloff:: (85% of the power), code::\flatness:: (of the power, as
+link::Classes/SpecFlatness::), code::\peak:: (the loudest bin above DC),
+code::\flux:: (increases since code::prev::) or code::\level:: (dB of the loudest
+bin). A silent frame gives 0.
+
+METHOD:: analyse
+The data behind code::fromSoundFile::, without a window.
+METHOD:: defaultObservers
+METHOD:: grid
+METHOD:: frameTimes
+Frame centres in seconds.
+METHOD:: resample
+Mean of the frames in each grid cell, or the nearest frame where a cell has none, so
+a coarse observer stays stepped.
+METHOD:: normalise
+METHOD:: percentile
+METHOD:: correlation
+METHOD:: agreement
+Mean correlation over every pair of tracks.
+METHOD:: runs
+A Boolean Array as code::[start, end)::  pairs.
+
+INSTANCEMETHODS::
+METHOD:: tracks
+The normalised tracks.
+METHOD:: spread
+METHOD:: silent
+METHOD:: agreement
+METHOD:: names
+METHOD:: details
+METHOD:: times
+METHOD:: duration
+METHOD:: floorDb
+METHOD:: panelGap
+METHOD:: colorKeys
+
+EXAMPLES::
+code::
+p = Platform.resourceDir +/+ "sounds/a11wlk01.wav";
+
+// four ideas of brightness
+PltObservers.fromSoundFile(p).front;
+
+// one descriptor, four window lengths
+PltObservers.sweep(p, \centroid, [256, 1024, 4096, 16384]).front;
+
+// your own observers
+(
+PltObservers.fromSoundFile(p, [
+	(descriptor: \flux, fftSize: 512),
+	(descriptor: \flux, fftSize: 4096),
+	(name: "high band", fftSize: 1024, func: { |frame| frame.copyToEnd(200).sum })
+]).front;
+)
+
+// tracks from anywhere, here three made-up ones
+PltObservers([{ 1.0.rand } ! 100, (0..99).sin, (0..49)], 5, ["noise", "sine", "ramp"]).front;
+::

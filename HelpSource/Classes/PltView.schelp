@@ -118,6 +118,9 @@ METHOD:: xTicks
 METHOD:: yTicks
 About how many ticks each axis should get.
 
+METHOD:: showText
+When false, no tick labels, axis labels or caption are drawn, and a stacked view names each panel in a word. For slides, with the pads set small.
+
 METHOD:: plotRect
 The data area for a given view, inside the padding.
 

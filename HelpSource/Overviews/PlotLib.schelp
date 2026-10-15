@@ -1,7 +1,7 @@
 TITLE:: PlotLib
 summary:: Plots for the things SuperCollider does not draw by itself
 categories:: Libraries>PlotLib
-related:: Classes/PltWavesets, Classes/PltNovelty, Classes/PltFilter, Classes/PltDistribution, Classes/PltMarkov, Classes/PltTrack, Classes/PltMap, Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum, Classes/PltWave, Classes/PltSpectrogram, Classes/PltVector, Classes/PltEnvelope
+related:: Classes/PltObservers, Classes/PltCut, Classes/PltUmwelt, Classes/PltConditioning, Classes/PltRecurrence, Classes/PltWavesets, Classes/PltNovelty, Classes/PltFilter, Classes/PltDistribution, Classes/PltMarkov, Classes/PltTrack, Classes/PltMap, Classes/PlotLib, Classes/PltScatter, Classes/PltHistogram, Classes/PltBifurcation, Classes/PltPhase, Classes/PltEvents, Classes/PltMeter, Classes/PltSpectrum, Classes/PltWave, Classes/PltSpectrogram, Classes/PltVector, Classes/PltEnvelope
 
 DESCRIPTION::
 A set of link::Classes/UserView:: plots with one palette, one set of axes and one
@@ -56,6 +56,24 @@ stationary distribution.
 per waveset, and one drawn large.
 ## link::Classes/PltNovelty:: || spectral novelty with the onset threshold and the
 detections it picks.
+::
+
+SECTION:: Analysing the analyser
+
+These five put the listening apparatus itself in view: what each analyser registers,
+where analysers disagree, and what a threshold or a mapping decides.
+
+DEFINITIONLIST::
+## link::Classes/PltObservers:: || several descriptors and window lengths on one
+sound, with their disagreement as a panel of its own.
+## link::Classes/PltCut:: || the events an onset threshold makes, at every
+threshold, with what falls below the cut.
+## link::Classes/PltUmwelt:: || one spectrum as a coarse FFT, mel bands and MFCCs,
+A-weighting and a centroid each receive it.
+## link::Classes/PltConditioning:: || smoothing, scaling, normalising, hysteresis and
+mapping, one panel per decision.
+## link::Classes/PltRecurrence:: || self-similarity under two metrics, split on the
+diagonal.
 ::
 
 SECTION:: How the classes are shaped

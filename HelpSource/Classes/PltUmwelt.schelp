@@ -1,0 +1,84 @@
+TITLE:: PltUmwelt
+summary:: One spectrum as several listeners receive it
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltObservers, Classes/PltSpectrum
+
+DESCRIPTION::
+A long-term average spectrum, drawn faintly in every panel, and over it what one
+listener receives of it: the bins of a coarser FFT, mel bands and the curve 13 MFCCs
+keep of them, the A-weighted spectrum with what the weighting takes away, the spectral
+centroid as a single line. What lies outside a listener's world is shaded.
+
+The reference is itself one listener, an 8192-point FFT averaged over the file.
+
+Listeners are Events:
+DEFINITIONLIST::
+## code::(type: \fft, size: 512):: || each coarse bin takes the loudest fine bin in
+it, so two partials sharing a bin become one. Below one bin width nothing is
+resolved.
+## code::(type: \mel, bands: 40, coeffs: 13, lo: 20, hi: 16000):: || mean power per
+triangular band, then through a DCT and back from the first code::coeffs::.
+## code::(type: \aweight):: || IEC 61672 A-weighting, the default of most meters.
+## code::(type: \centroid):: || one number.
+## code::(type: \band, lo: 300, hi: 3400, name: "telephone"):: || a passband.
+::
+
+CLASSMETHODS::
+
+METHOD:: fromSoundFile
+argument:: path
+argument:: listeners
+argument:: fftSize
+Of the reference.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: new
+argument:: spectrum
+Magnitudes from 0 Hz to Nyquist.
+argument:: sampleRate
+argument:: listeners
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: average
+Mean power per bin over frames, as a magnitude.
+METHOD:: aWeight
+A-weighting in dB, 0 at 1 kHz.
+METHOD:: mel
+METHOD:: melHz
+METHOD:: melBank
+METHOD:: melEnergies
+Mean power per band in dB, so a band reads on the scale of a bin.
+METHOD:: dct
+METHOD:: idct
+METHOD:: defaultListeners
+
+INSTANCEMETHODS::
+METHOD:: worlds
+What each listener received, as Events.
+METHOD:: reference
+METHOD:: listeners
+METHOD:: sampleRate
+METHOD:: binHz
+METHOD:: nyquist
+METHOD:: minHz
+METHOD:: rangeDb
+METHOD:: panelGap
+
+EXAMPLES::
+code::
+p = Platform.resourceDir +/+ "sounds/a11wlk01.wav";
+PltUmwelt.fromSoundFile(p).front;
+
+(
+PltUmwelt.fromSoundFile(p, [
+	(type: \fft, size: 2048),
+	(type: \fft, size: 128),
+	(type: \mel, bands: 20, coeffs: 5),
+	(type: \band, lo: 300, hi: 3400, name: "telephone")
+]).front;
+)
+::

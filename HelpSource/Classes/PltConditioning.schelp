@@ -1,0 +1,84 @@
+TITLE:: PltConditioning
+summary:: The decisions between a descriptor and a control, one panel each
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltTrack, Classes/PltMap, Classes/PltCut
+
+DESCRIPTION::
+A descriptor stream does not become a control by itself. Five decisions stand between
+them, each looking technical and each compositional:
+
+numberedlist::
+## smoothing, here a one-pole lag with link::Classes/Lag::'s definition of lag time;
+## scaling, linear or log2;
+## normalising against the material, between two percentiles of this file, with the
+share clipped;
+## thresholding with hysteresis, with the count a bare threshold would give for
+comparison;
+## mapping the result through a link::Classes/ControlSpec::, or firing the events
+the gate opens instead.
+::
+
+The parameters are plain setters; call code::refresh:: after changing them.
+
+CLASSMETHODS::
+
+METHOD:: fromSoundFile
+argument:: path
+argument:: descriptor
+Any of link::Classes/PltObservers#*describe::.
+argument:: fftSize
+argument:: hop
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: new
+argument:: values
+argument:: rate
+Frames per second.
+argument:: name
+argument:: unit
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: lag
+60 dB of convergence in code::seconds::, as link::Classes/Lag::.
+METHOD:: hysteresis
+On at or above code::on::, off below code::off::.
+METHOD:: rises
+Where a gate opens.
+
+INSTANCEMETHODS::
+METHOD:: stages
+Every stage as an Event, computed from the current parameters.
+METHOD:: lag
+METHOD:: warp
+code::\log:: or code::\lin::.
+METHOD:: lo
+METHOD:: hi
+Percentiles for normalising.
+METHOD:: on
+METHOD:: off
+METHOD:: spec
+METHOD:: specName
+METHOD:: raw
+METHOD:: rate
+METHOD:: name
+METHOD:: unit
+METHOD:: duration
+METHOD:: panelGap
+
+EXAMPLES::
+code::
+c = PltConditioning.fromSoundFile(Platform.resourceDir +/+ "sounds/a11wlk01.wav").front;
+
+// no smoothing and no gap: the bare threshold chatters
+c.lag_(0).on_(0.52).off_(0.48).refresh;
+
+// a wider gap commits less often
+c.lag_(0.1).on_(0.7).off_(0.3).refresh;
+
+c.spec_(\freq.asSpec).specName_("freq").refresh;
+c.stages[\events].size;
+::

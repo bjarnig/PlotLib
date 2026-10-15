@@ -1,0 +1,74 @@
+TITLE:: PltRecurrence
+summary:: Self-similarity of a sound, under one metric or two
+categories:: Libraries>PlotLib
+related:: Overviews/PlotLib, Classes/PltObservers, Classes/PltNovelty
+
+DESCRIPTION::
+Every moment of a sound against every other, bright where they are alike. Blocks
+along the diagonal are sections; bright patches away from it are returns.
+
+Given two metrics, the square is split on its diagonal, one below and one above. The
+same sound then shows two forms, and the caption gives the rank correlation between
+them. Distances are ranked before drawing, so both halves spend the same brightness
+and differ only in where they put it.
+
+A metric is code::\mfcc:: (coefficients 1 to 12 of 40 mel bands, leaving out the
+0th as link::Classes/MFCC:: does), code::\mel:: (the band levels in dB), or an Array
+of link::Classes/PltObservers#*describe:: names, each z-scored over the file.
+
+CLASSMETHODS::
+
+METHOD:: fromSoundFile
+argument:: path
+argument:: metricA
+argument:: metricB
+code::nil:: for a single metric.
+argument:: fftSize
+argument:: points
+The side of the matrix.
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: new
+Any feature vectors, one per moment.
+argument:: vectorsA
+argument:: vectorsB
+argument:: duration
+argument:: nameA
+argument:: nameB
+argument:: title
+argument:: width
+argument:: height
+
+METHOD:: features
+One vector per frame, pooled into code::points:: cells.
+METHOD:: matrix
+Similarity as the rank of each distance: 1 nearest, 0 farthest.
+METHOD:: metricName
+
+INSTANCEMETHODS::
+METHOD:: matrixA
+METHOD:: matrixB
+METHOD:: correlation
+METHOD:: nameA
+METHOD:: nameB
+METHOD:: duration
+METHOD:: gamma
+METHOD:: dataBounds
+METHOD:: plotRect
+Square, whatever the window.
+
+EXAMPLES::
+code::
+p = Platform.resourceDir +/+ "sounds/a11wlk01.wav";
+PltRecurrence.fromSoundFile(p).front;
+PltRecurrence.fromSoundFile(p, \mel, [\flux, \level]).front;
+PltRecurrence.fromSoundFile(p, \mfcc, nil).front;
+
+// any sequence of vectors: a random walk in three dimensions
+(
+var x = [0, 0, 0];
+PltRecurrence({ x = x + ({ 0.2.rand2 } ! 3) } ! 150, nil, 150, "walk").front;
+)
+::

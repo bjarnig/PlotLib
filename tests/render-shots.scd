@@ -240,6 +240,13 @@ Routine({
 				48000, 10, "a 220 Hz sine"));
 		shot.value("novelty-file",
 			PltNovelty.fromSoundFile(path, 1024, 0.25, 0.25, "a11wlk01.wav"), 1.0);
+		shot.value("observers-file", PltObservers.fromSoundFile(path, title: "a11wlk01.wav"), 0.8);
+		shot.value("observers-sweep", PltObservers.sweep(path, \centroid, title: "a11wlk01.wav"), 0.8);
+		shot.value("cut-file", PltCut.fromSoundFile(path, title: "a11wlk01.wav").threshold_(0.3), 0.8);
+		shot.value("umwelt-file", PltUmwelt.fromSoundFile(path, title: "a11wlk01.wav"), 0.8);
+		shot.value("conditioning-file",
+			PltConditioning.fromSoundFile(path, title: "a11wlk01.wav"), 0.8);
+		shot.value("recurrence-file", PltRecurrence.fromSoundFile(path, title: "a11wlk01.wav"), 1.2);
 	}.value;
 
 	"done".postln;

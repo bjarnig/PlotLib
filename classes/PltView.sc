@@ -11,6 +11,8 @@ PltView {
 	var <window, <view;
 	var <>padLeft = 54, <>padRight = 18, <>padTop = 18, <>padBottom = 44;
 	var <>xLabel = "", <>yLabel = "", <>showTicks = true, <>xTicks = 6, <>yTicks = 5;
+	// false: no tick labels, axis labels or caption, and panels name themselves in a word
+	var <>showText = true;
 
 	*new { |title, width = 900, height = 460|
 		^super.new.initPltView(title, width, height)
@@ -150,6 +152,7 @@ PltView {
 
 	prTicks { |r, b, xLabels = true, yLabels = true|
 		var font = PlotLib.font(9), col = PlotLib.color(\muted);
+		if(showText.not) { ^this };
 		if(xLabels) {
 			this.xTickValues(b).do { |t|
 				var px = this.xPix(t, r, b);
@@ -169,6 +172,7 @@ PltView {
 	prCaption { |v, r|
 		var font = PlotLib.font(9), col = PlotLib.color(\muted);
 		var line = this.caption;
+		if(showText.not) { ^this };
 		if(xLabel.size > 0) {
 			Pen.stringCenteredIn(xLabel,
 				Rect(r.left, r.bottom + 21, r.width, 12), font, col);

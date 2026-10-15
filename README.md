@@ -1,6 +1,6 @@
 # PlotLib
 
-Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, event scatters, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks, mapping curves, filter responses, Markov chains, wavesets and onset novelty.
+Various plots for SuperCollider: bifurcation diagrams, phase portraits, histograms, event scatters, a level meter, a spectrum analyser, waveforms, spectrograms, a vectorscope, envelopes, descriptor tracks, mapping curves, filter responses, Markov chains, wavesets and onset novelty, and a set of views that put the analysers themselves in view.
 
 ![bifurcation diagram of the logistic map](images/bifurcation.png)
 
@@ -50,6 +50,13 @@ PltMarkov([[0.9, 0.1], [0.5, 0.5]], ["a", "b"]).front;
 // wavesets, and the curve an onset detector looks at
 PltWavesets.fromSoundFile(path).front;
 PltNovelty.fromSoundFile(path).front;
+
+// the analysers themselves
+PltObservers.sweep(path, \centroid).front;
+PltCut.fromSoundFile(path).front;
+PltUmwelt.fromSoundFile(path).front;
+PltConditioning.fromSoundFile(path).front;
+PltRecurrence.fromSoundFile(path).front;
 ```
 
 Reference in the help browser under **PlotLib**, more in [`examples/`](examples).
@@ -73,6 +80,40 @@ Reference in the help browser under **PlotLib**, more in [`examples/`](examples)
 <p>
 <img src="images/vector-wide.png" alt="vectorscope" height="290">
 <img src="images/envelope-curves.png" alt="envelope with mixed curve types" height="290">
+</p>
+
+### Analysing the analyser
+
+A descriptor is one fixed cross-section of a sound, and these views show which one. `PltObservers` runs several descriptors or window lengths over one file and draws their disagreement as a panel of its own. Here one centroid at four FFT sizes agrees to r = 0.85 overall and parts most where the speech is quiet.
+
+![one descriptor at four window lengths](images/observers-sweep.png)
+
+`PltCut` sweeps the onset threshold: one row of events per threshold, with the share of the curve that falls below the chosen cut. At 0.3 this file has 25 events, and 91% of the detection function is discarded.
+
+![events at every threshold](images/cut-file.png)
+
+`PltUmwelt` draws one spectrum as a 512-point FFT, 40 mel bands and 13 MFCCs, A-weighting and a centroid each receive it, with what lies outside each one shaded. `PltConditioning` lays out the decisions between a descriptor and a control: smoothing, scaling, normalising, hysteresis and mapping. `PltRecurrence` splits a self-similarity matrix on its diagonal between two metrics.
+
+![one spectrum through four listeners](images/umwelt-file.png)
+
+<p>
+<img src="images/conditioning-file.png" alt="five conditioning stages" height="300">
+<img src="images/recurrence-file.png" alt="self-similarity under two metrics" height="300">
+</p>
+
+The same views on pieces of two to five minutes, drawn with `showText_(false)`, which leaves out tick labels and captions for slides. On the five-minute piece a cut at 0.3 keeps 70 events and leaves 95% of the curve below it, and its two metrics agree to r = 0.70.
+
+![four descriptors and their disagreement over five minutes](images/long-sampler-observers.png)
+
+![events at every threshold over five minutes](images/long-sampler-cut.png)
+
+![four listeners on a long piece](images/long-rdrdb-umwelt.png)
+
+![five conditioning stages on a long piece](images/long-drain-conditioning.png)
+
+<p>
+<img src="images/long-sampler-recurrence.png" alt="self-similarity over five minutes" height="400">
+<img src="images/long-drain-recurrence.png" alt="self-similarity over two minutes" height="400">
 </p>
 
 ### Live
